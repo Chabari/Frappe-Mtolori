@@ -120,7 +120,7 @@ def sync_items():
             SELECT name
             FROM `tabItem`
             WHERE disabled = 0
-        """)
+        """, as_dict=1)
         company = get_main_company()
         for itm in items:
             doc = frappe.get_doc('Item', itm)    

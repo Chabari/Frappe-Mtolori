@@ -8,7 +8,7 @@ def price_group():
             SELECT name, price_list_name, price_list_id
             FROM `tabPrice List`
             WHERE enabled=1
-        """)
+        """, as_dict=1)
         for item in items:
             payload = {
                 "name": item.price_list_name,
@@ -77,7 +77,7 @@ def item_pricing():
             SELECT name, item_code, price_list, price_list_rate, buying, selling
             FROM `tabItem Price`
             WHERE disabled=0
-        """)
+        """, as_dict=1)
         for item in items:
             before_save_price(item, 'none')
         
@@ -94,7 +94,7 @@ def sync_customers():
             SELECT name, default_price_list, mobile_contact_no
             FROM `tabCustomer`
             WHERE disabled=0
-        """)
+        """, as_dict=1)
     for cus in customers:
         if cus.mobile_contact_no and cus.default_price_list:
             payload = {
