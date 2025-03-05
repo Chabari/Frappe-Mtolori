@@ -116,34 +116,68 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+    "Price List": {
+        "before_save": "mtolori_api.pricing.before_save"
+    },
+    "Item Price": {
+        "before_save": "mtolori_api.pricing.before_save_price"
+    },
+}
+
+
+fixtures = [
+    {
+        "doctype": "Custom Field",
+        "filters": [
+            [
+                "name",
+                "in",
+                (
+                    "Item-mtolori_customization",
+                    # "Item-category",
+                    "Item-sub_category",
+                    "Item-pack_size",
+                    "Item-weight_grams",
+                    "Item-column_break_ad4gl",
+                    "Item-phl_days",
+                    "Item-rate_of_use",
+                    "Item-extended_description",
+                    "Item-the_extended_description",
+                    "Item-active_ingredient",
+                    "Item-target_pests",
+                    "Item-target_crops",
+                    "Item-item_id",
+                    "Company-mtolori_api_key",
+                    "Company-mtolori_host_url",
+                    "Company-organization_id",
+                    "Warehouse-is_virtual_store",
+                    "Warehouse-shop_id",
+                    "Sales Invoice-mtolori_data",
+                    "Sales Invoice-order_id",
+                    "Sales Invoice-order_type",
+                    "Sales Invoice-order_number",
+                    "Sales Invoice-delivery_method",
+                    "Price List-price_list_id"
+                ),
+            ]
+        ],
+    },
+    
+]
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"mtolori_api.tasks.all"
-# 	],
-# 	"daily": [
-# 		"mtolori_api.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"mtolori_api.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"mtolori_api.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"mtolori_api.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	
+	"daily": [
+		"mtolori_api.utils.sync_items",
+		"mtolori_api.pricing.price_group",
+		"mtolori_api.pricing.item_pricing",
+		"mtolori_api.pricing.sync_customers",
+	],
+}
 
 # Testing
 # -------
