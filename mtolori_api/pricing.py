@@ -34,19 +34,19 @@ def before_save(doc, method):
     try:
         pass
         
-        # payload = {
-        #     "name": doc.price_list_name,
-        #     "price_list": doc.price_list_id,
-        #     "active": True,
-        #     "erp_serial": doc.name,
-        #     "shop": 1
-        # }   
-        # res = get(f'/price-group/{doc.name}/')
-        # if res.status_code == 404:
-        #     res = post(f'/price-group/', payload)
-        # else:
-        #     res = patch(f'/price-group/{doc.name}/', payload)
-        # frappe.db.commit() 
+        payload = {
+            "name": doc.price_list_name,
+            "price_list": doc.price_list_id,
+            "active": True,
+            "erp_serial": doc.name,
+            "shop": 1
+        }   
+        res = get(f'/price-group/{doc.name}/')
+        if res.status_code == 404:
+            res = post(f'/price-group/', payload)
+        else:
+            res = patch(f'/price-group/{doc.name}/', payload)
+        frappe.db.commit() 
         
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
@@ -55,21 +55,21 @@ def before_save(doc, method):
         
 def before_save_price(doc, method):
     price_list = frappe.get_doc("Price List", doc.price_list)
-    # payload = {
-    #     "shop": 1,
-    #     "product": doc.item_code,
-    #     "price_list": price_list.price_list_id,
-    #     "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
-    #     "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
-    #     "erp_serial": doc.name
-    # }   
-    # res = get(f'/pricing/{doc.name}/')
-    # if res.status_code == 404:
-    #     res = post(f'/pricing/', payload)
-    # else:
-    #     res = patch(f'/pricing/{doc.name}/', payload)
+    payload = {
+        "shop": 1,
+        "product": doc.item_code,
+        "price_list": price_list.price_list_id,
+        "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
+        "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
+        "erp_serial": doc.name
+    }   
+    res = get(f'/pricing/{doc.name}/')
+    if res.status_code == 404:
+        res = post(f'/pricing/', payload)
+    else:
+        res = patch(f'/pricing/{doc.name}/', payload)
         
-    # frappe.db.commit() 
+    frappe.db.commit() 
     
 @frappe.whitelist(allow_guest=True)  
 def item_pricing():
