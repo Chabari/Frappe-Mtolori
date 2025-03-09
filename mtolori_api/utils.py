@@ -83,20 +83,20 @@ def get_headers():
 
 def get(endpoint):
     response = requests.get(f'{mtolori_main_url()}{endpoint}', headers=get_headers())
-    if not response.ok:
-        return False
+    # if not response.ok:
+    #     return False
     return response.json()
 
 def post(endpoint, payload):
     response = requests.post(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
-    if not response.ok:
-        return False
+    # if not response.ok:
+    #     return False
     return response.json()
 
 def patch(endpoint, payload):
     response = requests.patch(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
-    if not response.ok:
-        return False
+    # if not response.ok:
+    #     return False
     return response.json()
 
 def get_buy_price(code):
