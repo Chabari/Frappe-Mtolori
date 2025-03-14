@@ -121,7 +121,15 @@ def sync_items():
             FROM `tabItem`
             WHERE disabled = 0
         """, as_dict=1)
-        company = get_main_company()
+        
+        frappe.enqueue(save_itm, queue='short', items=items)
+        return "Success"
+    except Exception as e:
+        print(str(e))
+        frappe.log_error(frappe.get_traceback(), str(e))
+        
+def save_itm(items):
+    try:
         for itm in items:
             doc = frappe.get_doc('Item', itm)    
             inventory = []
@@ -149,12 +157,7 @@ def sync_items():
                 res = post('/products/', payload)
             else:
                 res = patch(f'/products/{doc.item_code}/', payload)
-                
-                # if res and res.status_code == 201:
-                #     if res['id']:
-                #         doc.item_id = res['id']
-                #         doc.save(ignore_permissions = True)
-                    
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
+                
