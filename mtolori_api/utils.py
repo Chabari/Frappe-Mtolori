@@ -68,12 +68,10 @@ def get_main_company():
     return frappe.get_doc("Company", get_default_company())
 
 def mtolori_main_url():
-    # return get_main_company().mtolori_host_url
-    return "https://mtolori.com"
+    return get_main_company().mtolori_host_url
 
 def mtolori_api_key():
-    # return get_main_company().mtolori_api_key
-    return "Ti/mvKHuQjwpqsMSzgq+fqoEi5/PJqIAy2bTMqTnATnvQSX2qowqohsImqNsWXNiLCAxsIwTB6dZ6vxk/pZCkw=="
+    return get_main_company().mtolori_api_key
 
 def get_headers():
     headers = {
@@ -91,11 +89,6 @@ def get(endpoint):
 
 def post(endpoint, payload):
     response = requests.post(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
-    print(f'{mtolori_main_url()}{endpoint}')
-    print("wueeeeeeeeeeeeeeeeeeee")
-    print(response.text)
-    print(response.status_code)
-    print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz...")
     if not response.ok:
         return False
     return response.json()
@@ -152,7 +145,7 @@ def sync_items():
             }   
             
             res = get(f'/products/{doc.item_code}/')
-            if res.status_code == 404:
+            if not res:
                 res = post('/products/', payload)
             else:
                 res = patch(f'/products/{doc.item_code}/', payload)
