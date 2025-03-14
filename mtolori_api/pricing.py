@@ -1,5 +1,5 @@
-
 from mtolori_api.utils import *
+import logging
 
 @frappe.whitelist(allow_guest=True)  
 def price_group():
@@ -8,11 +8,14 @@ def price_group():
         FROM `tabPrice List`
         WHERE enabled=1
     """, as_dict=1)
-    frappe.enqueue(save_price_group, queue='short', items=items)
+    frappe.enqueue('mtolori_api.pricing.save_price_group', queue='short', items=items)
 
-    return "Success"
+
+    return "Success. Data queued for processing"
     
 def save_price_group(items):
+    logging.info(f"save_price_group called with items: {items}")
+
     try:
         for item in items:
             payload = {
