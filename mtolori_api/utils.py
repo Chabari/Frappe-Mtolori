@@ -122,7 +122,7 @@ def sync_items():
             WHERE disabled = 0
         """, as_dict=1)
         
-        frappe.enqueue(save_itm, queue='short', items=items)
+        frappe.enqueue('mtolori_api.utils.save_itm', queue='short', items=items)
         return "Success"
     except Exception as e:
         print(str(e))
