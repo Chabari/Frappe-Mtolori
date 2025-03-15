@@ -55,8 +55,8 @@ def test_price(name):
             # res = patch(f'/price-group/{doc.name}/', payload)
             res = requests.patch(f'{mtolori_main_url()}/price-group/{doc.name}/', headers=get_headers(), json=payload)
             
-        frappe.db.commit() 
-        frappe.response.message = res
+        # frappe.db.commit() 
+        frappe.response.message = res.json()
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
         frappe.response.error = str(e)
