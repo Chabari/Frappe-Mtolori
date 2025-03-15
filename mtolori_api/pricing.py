@@ -49,9 +49,11 @@ def test_price(name):
         }   
         res = get(f'/price-group/{doc.name}/')
         if not res:
-            res = post(f'/price-group/', payload)
+            res = requests.post(f'{mtolori_main_url()}/price-group/', headers=get_headers(), json=payload)
+            # res = post(f'/price-group/', payload)
         else:
-            res = patch(f'/price-group/{doc.name}/', payload)
+            # res = patch(f'/price-group/{doc.name}/', payload)
+            res = requests.patch(f'{mtolori_main_url()}/price-group/{doc.name}/', headers=get_headers(), json=payload)
             
         frappe.db.commit() 
         frappe.response.message = res
