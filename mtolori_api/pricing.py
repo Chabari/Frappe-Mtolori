@@ -10,7 +10,6 @@ def price_group():
     """, as_dict=1)
     frappe.enqueue('mtolori_api.pricing.save_price_group', queue='short', items=items)
 
-
     return "Success. Data queued for processing"
     
 def save_price_group(items):
@@ -35,7 +34,6 @@ def save_price_group(items):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
      
-    
 @frappe.whitelist(allow_guest=True)  
 def test_price(name):
     try:
@@ -133,7 +131,7 @@ def save_customers(customers):
             if cus.mobile_contact_no and cus.default_price_list:
                 payload = {
                     "phone_number": cus.mobile_contact_no,
-                    "group": cus.default_price_list,
+                    "price_list__erp_serial": cus.default_price_list,
                     "shop": 1
                 }   
                 res = post(f'/price-bias-lookup/', payload)
@@ -144,10 +142,9 @@ def save_customers(customers):
 @frappe.whitelist(allow_guest=True)  
 def sync_customers():
     customers = frappe.db.sql("""
-            SELECT name, default_price_list, mobile_contact_no
+            SELECT name, default_price_list, mobile_contact_no, customer_group
             FROM `tabCustomer`
             WHERE disabled=0
         """, as_dict=1)
     frappe.enqueue('mtolori_api.pricing.save_customers', queue='short', customers=customers)
     return "Success"
-            
