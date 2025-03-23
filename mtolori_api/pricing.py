@@ -24,11 +24,11 @@ def save_price_group(items):
                 "erp_serial": item.name,
                 "shop": 1
             }   
-            res = get(f'/price-group/{item.name}/')
+            res = get(f'/price-list/{item.name}/')
             if not res:
-                res = post(f'/price-group/', payload)
+                res = post(f'/price-list/', payload)
             else:
-                res = patch(f'/price-group/{item.name}/', payload)
+                res = patch(f'/price-list/{item.name}/', payload)
 
         frappe.db.commit()
     except Exception as e:
@@ -40,25 +40,24 @@ def test_price(name):
         doc = frappe.get_doc("Price List", name)
         payload = {
             "name": doc.price_list_name,
-            "price_list": doc.price_list_id,
-            "active": True,
+            "buying": True if doc.buying == 1 else False,
+            "selling": True if doc.selling == 1 else False,
+            "shop": 1,
             "erp_serial": doc.name,
-            "shop": 1
-        }   
-        res = get(f'/price-group/{doc.name}/')
+            "active": True
+        }
+        res = get(f'/price-list/{doc.name}/')
         if not res:
-            res = requests.post(f'{mtolori_main_url()}/price-group/', headers=get_headers(), json=payload)
-            # res = post(f'/price-group/', payload)
+            res = post(f'/price-list/', payload)
         else:
-            # res = patch(f'/price-group/{doc.name}/', payload)
-            res = requests.patch(f'{mtolori_main_url()}/price-group/{doc.name}/', headers=get_headers(), json=payload)
+            res = patch(f'/price-list/{doc.name}/', payload)
             
         # frappe.db.commit() 
-        frappe.response.message = res.json()
+        frappe.response.message = res
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
         frappe.response.error = str(e)
-        frappe.response.message = "Failed. Order not created"
+        frappe.response.message = "Failed. Not successful"
  
 def before_save(doc, method):
     try:
