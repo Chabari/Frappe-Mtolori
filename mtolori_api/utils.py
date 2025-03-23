@@ -147,7 +147,7 @@ def save_itm(items):
                 "erp_serial": doc.item_code,
                 "organization" : 1,
                 "name": doc.item_name,
-                "description": doc.extended_description or doc.item_name,
+                "description": doc.the_extended_description if doc.the_extended_description else doc.description,
                 "weight": doc.weight_grams,
                 "sku": doc.item_code,
                 "subcategory": doc.sub_category,
