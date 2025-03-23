@@ -4,7 +4,7 @@ import logging
 @frappe.whitelist(allow_guest=True)  
 def price_group():
     items = frappe.db.sql("""
-        SELECT name, price_list_name, price_list_id
+        SELECT name, price_list_name, price_list_id, buying, selling
         FROM `tabPrice List`
         WHERE enabled=1
     """, as_dict=1)
@@ -19,10 +19,11 @@ def save_price_group(items):
         for item in items:
             payload = {
                 "name": item.price_list_name,
-                "price_list": item.price_list_id,
-                "active": True,
+                "buying": True if item.buying == 1 else False,
+                "selling": True if item.selling == 1 else False,
+                "shop": 1,
                 "erp_serial": item.name,
-                "shop": 1
+                "active": True
             }   
             res = get(f'/price-list/{item.name}/')
             if not res:
