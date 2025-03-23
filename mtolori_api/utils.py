@@ -145,6 +145,7 @@ def save_itm(items):
                 
             payload = {
                 "erp_serial": doc.item_code,
+                "organization" : 1,
                 "name": doc.item_name,
                 "description": doc.extended_description or doc.item_name,
                 "weight": doc.weight_grams,

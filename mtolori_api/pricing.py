@@ -128,10 +128,18 @@ def item_pricing():
 def save_customers(customers):
     try:
         for cus in customers:
-            if cus.mobile_contact_no and cus.default_price_list:
+            if cus.mobile_contact_no:
+                customer_group = frappe.get_doc("Customer Group", cus.customer_group)
+                default_price_list = None
+                if customer_group and customer_group.default_price_list:
+                    default_price_list = customer_group.default_price_list
+                    
+                if cus.default_price_list:
+                    default_price_list = cus.default_price_list
+                    
                 payload = {
                     "phone_number": cus.mobile_contact_no,
-                    "price_list__erp_serial": cus.default_price_list,
+                    "price_list__erp_serial": default_price_list,
                     "shop": 1
                 }   
                 res = post(f'/price-bias-lookup/', payload)
