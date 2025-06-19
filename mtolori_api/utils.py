@@ -121,9 +121,10 @@ def sync_items():
             FROM `tabItem`
             WHERE disabled = 0 AND publish_item = 1
         """, as_dict=1)
-        x_items = [itm.name for itm in items]
+        items = [itm.name for itm in items]
         
-        frappe.enqueue('mtolori_api.utils.save_itm', queue='short', items=x_items)
+        # frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
+        frappe.enqueue(method=save_itm, queue='long', items=items)
         return "Success"
     except Exception as e:
         print(str(e))
