@@ -8,7 +8,6 @@ from requests.auth import HTTPBasicAuth
 from frappe.utils import cint, flt
 import qrcode
 
-
 @frappe.whitelist(allow_guest=True)  
 def get_data(
 	item_code=None, start=0, sort_by="actual_qty", sort_order="desc"
@@ -120,11 +119,23 @@ def sync_items():
         items = frappe.db.sql("""
             SELECT name
             FROM `tabItem`
-            WHERE disabled = 0
+            WHERE disabled = 0 AND publish_item = 1
         """, as_dict=1)
         
         frappe.enqueue('mtolori_api.utils.save_itm', queue='short', items=items)
         return "Success"
+    except Exception as e:
+        print(str(e))
+        frappe.log_error(frappe.get_traceback(), str(e))
+        
+def before_save_item(doc, method):
+    try:
+        if doc.disabled or not doc.publish_item:
+            res = get(f'/products/{doc.item_code}/')
+            if res:
+                patch(f'/products/{doc.item_code}/', {"active": False})
+        else:
+            save_itm([doc.name])
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
@@ -142,6 +153,9 @@ def save_itm(items):
                     "quantity": dt.actual_qty,
                     "buying_price": get_buy_price(doc.item_code)
                 })
+            subcategory = 1
+            if doc.sub_category:
+                subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
                 
             payload = {
                 "erp_serial": doc.item_code,
@@ -150,7 +164,7 @@ def save_itm(items):
                 "description": doc.the_extended_description if doc.the_extended_description else doc.description,
                 "weight": doc.weight_grams,
                 "sku": doc.item_code,
-                "subcategory": doc.sub_category,
+                "subcategory": subcategory,
                 "inventory": inventory
             }   
             

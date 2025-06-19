@@ -123,6 +123,9 @@ doc_events = {
     "Item Price": {
         "before_save": "mtolori_api.pricing.before_save_price"
     },
+    "Item": {
+        "before_save": "mtolori_api.utils.before_save_item"
+    },
 }
 
 
