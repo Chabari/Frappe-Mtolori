@@ -215,6 +215,8 @@ def save_ids(items):
             else:
                 res = patch(f'/products/{doc.item_code}/', payload)
                 reses.append(res)
+        return reses
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
+        return str(e)
