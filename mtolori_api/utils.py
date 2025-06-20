@@ -2,7 +2,7 @@ import frappe
 import requests
 from erpnext import get_default_company
 from datetime import datetime
-
+import os
 from requests.auth import HTTPBasicAuth
 
 from frappe.utils import cint, flt
@@ -216,3 +216,60 @@ def save_ids(items):
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
         return str(e)
+    
+@frappe.whitelist(allow_guest=True) 
+def sync_images():
+    try:
+        items = frappe.db.sql("""
+            SELECT name, back_image, image
+            FROM `tabItem`
+            WHERE disabled = 0 AND publish_item = 1
+        """, as_dict=1)
+        
+        frappe.enqueue('mtolori_api.utils.save_itm_image', queue='long', items=items)
+        return "Success"
+    except Exception as e:
+        print(str(e))
+        frappe.log_error(frappe.get_traceback(), str(e))
+        
+def save_itm_image(items):
+    try:
+        for itm in items:
+            file_url = itm.image or itm.back_image
+            clean_url = file_url.lstrip('/')
+    
+            file_path = frappe.get_site_path(clean_url)
+
+            if not os.path.exists(file_path):
+                frappe.throw(f"File not found at {file_path}")
+
+            file_name = os.path.basename(file_path)
+
+            with open(file_path, 'rb') as f:
+                files = {
+                    'path': (file_name, f, 'image/png')
+                }
+                payload = {
+                    "product__erp_serial": itm.name,
+                    "side" : 'front',
+                }   
+                response = requests.post(f'{mtolori_main_url()}/product-images/', headers=get_headers(), json=payload, files=files)
+    
+            if not response.ok:
+                return response
+            return response.json()
+
+    except Exception as e:
+        print(str(e))
+        frappe.log_error(frappe.get_traceback(), str(e))
+        return "ziiiiiiiiiiiiii"
+        
+@frappe.whitelist(allow_guest=True) 
+def get_item(name):
+    item = frappe.get_doc("Item", name)
+    data = {
+        "name": item.name,
+        "back_image": item.back_image,
+        "image": item.image,
+    }
+    return save_itm_image([frappe._dict(data)])
