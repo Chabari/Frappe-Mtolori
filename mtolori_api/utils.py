@@ -236,10 +236,10 @@ def save_itm_image(items):
     try:
         for itm in items:
             file_url = itm.image or itm.back_image
-            clean_url = file_url.lstrip('/')
-    
-            file_path = frappe.get_site_path(clean_url)
+            relative_path = os.path.join('public', file_url.lstrip('/'))
 
+            file_path = frappe.get_site_path(relative_path)
+    
             if not os.path.exists(file_path):
                 frappe.throw(f"File not found at {file_path}")
 
