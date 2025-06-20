@@ -89,14 +89,14 @@ def get(endpoint):
 def post(endpoint, payload):
     response = requests.post(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
     
-    # if not response.ok:
-    #     return False
+    if not response.ok:
+        return False
     return response.json()
 
 def patch(endpoint, payload):
     response = requests.patch(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
-    # if not response.ok:
-    #     return False
+    if not response.ok:
+        return False
     return response.json()
     
 def get_buy_price(code):
@@ -131,12 +131,7 @@ def sync_items():
         
 def before_save_item(doc, method):
     try:
-        if doc.disabled or not doc.publish_item:
-            res = get(f'/products/{doc.item_code}/')
-            if res:
-                patch(f'/products/{doc.item_code}/', {"active": False})
-        else:
-            save_itm([doc.name])
+        save_itm([doc.name])
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
@@ -166,6 +161,7 @@ def save_itm(items):
                 "weight": doc.weight_grams,
                 "sku": doc.item_code,
                 "subcategory": subcategory,
+                "is_active": False if doc.disabled == 0 or doc.publish_item == 0 else True,
                 "inventory": inventory
             }   
             

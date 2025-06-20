@@ -8,7 +8,7 @@ def price_group():
         FROM `tabPrice List`
         WHERE enabled=1
     """, as_dict=1)
-    frappe.enqueue('mtolori_api.pricing.save_price_group', queue='short', items=items)
+    frappe.enqueue('mtolori_api.pricing.save_price_group', queue='long', items=items)
 
     return "Success. Data queued for processing"
     
@@ -117,7 +117,7 @@ def item_pricing():
             FROM `tabItem Price`
             WHERE disabled=0
         """, as_dict=1)
-        frappe.enqueue('mtolori_api.pricing.save_price', queue='short', items=items)
+        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items)
                     
         return "Success"
     except Exception as e:
@@ -154,5 +154,5 @@ def sync_customers():
             FROM `tabCustomer`
             WHERE disabled=0
         """, as_dict=1)
-    frappe.enqueue('mtolori_api.pricing.save_customers', queue='short', customers=customers)
+    frappe.enqueue('mtolori_api.pricing.save_customers', queue='long', customers=customers)
     return "Success"
