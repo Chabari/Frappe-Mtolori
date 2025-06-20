@@ -255,9 +255,7 @@ def save_itm_image(items):
                 }   
                 response = requests.post(f'{mtolori_main_url()}/product-images/', headers=get_headers(), json=payload, files=files)
     
-            if not response.ok:
-                return response
-            return response.json()
+            return response
 
     except Exception as e:
         print(str(e))
