@@ -91,14 +91,14 @@ def get(endpoint):
 def post(endpoint, payload):
     response = requests.post(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
     
-    if not response.ok:
-        return False
+    # if not response.ok:
+    #     return False
     return response.json()
 
 def patch(endpoint, payload):
     response = requests.patch(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
-    if not response.ok:
-        return False
+    # if not response.ok:
+    #     return False
     return response.json()
     
 def get_buy_price(code):
@@ -212,10 +212,14 @@ def save_ids(items):
             res = get(f'/products/{doc.item_code}/')
             if not res:
                 res = post('/products/', payload)
-                reses.append(res)
+                reses.append({
+                    "post": res
+                })
             else:
                 res = patch(f'/products/{doc.item_code}/', payload)
-                reses.append(res)
+                reses.append({
+                    "patch": res
+                })
         return reses
     except Exception as e:
         print(str(e))
