@@ -112,6 +112,20 @@ def get_buy_price(code):
     if buy_price:
         return buy_price.price_list_rate
     return 0
+
+def get_sell_price(code):
+    buy_price = frappe.db.get_all(
+        "Item Price",
+        filters={
+            "item_code": code,
+            'price_list': "Standard Buying"
+        },            
+        fields=["price_list_rate"],
+        limit=1,
+    )
+    if buy_price:
+        return buy_price.price_list_rate
+    return 0
   
 @frappe.whitelist(allow_guest=True)  
 def sync_items():
@@ -122,8 +136,39 @@ def sync_items():
             WHERE disabled = 0 AND publish_item = 1
         """, as_dict=1)
         items = [itm.name for itm in items]
+        payloads = []
+        for itm in items:
+            doc = frappe.get_doc('Item', itm)    
+            inventory = []
+            item_data = get_data(doc.item_code)
+            for dt in item_data:
+                shop = frappe.get_doc("Warehouse", dt.warehouse)
+                inventory.append({
+                    "shop": shop.shop_id,
+                    "quantity": dt.actual_qty,
+                    "buying_price": get_buy_price(doc.item_code),
+                    
+                })
+            subcategory = 1
+            if doc.sub_category:
+                subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
+                
+            payload = {
+                "erp_serial": doc.item_code,
+                "organization" : 1,
+                "name": doc.item_name,
+                "description": doc.the_extended_description if doc.the_extended_description else doc.description,
+                "weight": doc.weight_grams,
+                "sku": doc.item_code,
+                "subcategory": subcategory,
+                "is_active": False if doc.disabled == 0 or doc.publish_item == 0 else True,
+                "inventory": inventory
+            }   
+            payloads.append(payload)
+            
         
-        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
+        # frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
+        frappe.response.payloads = payloads
         return "Success"
     except Exception as e:
         print(str(e))
@@ -147,7 +192,8 @@ def save_itm(items):
                 inventory.append({
                     "shop": shop.shop_id,
                     "quantity": dt.actual_qty,
-                    "buying_price": get_buy_price(doc.item_code)
+                    "buying_price": get_buy_price(doc.item_code),
+                    
                 })
             subcategory = 1
             if doc.sub_category:
@@ -267,7 +313,30 @@ def get_item(name):
     item = frappe.get_doc("Item", name)
     data = {
         "name": item.name,
-        "back_image": item.back_image,
         "image": item.image,
     }
-    return save_itm_image([frappe._dict(data)])
+    file_url = item.image
+    relative_path = os.path.join('public', file_url.lstrip('/'))
+
+    file_path = frappe.get_site_path(relative_path)
+
+    if not os.path.exists(file_path):
+        frappe.throw(f"File not found at {file_path}")
+
+    file_name = os.path.basename(file_path)
+
+    with open(file_path, 'rb') as f:
+        files = {
+            'path': (file_name, f, 'image/png')
+        }
+        payload = {
+            "product__erp_serial": item.name,
+            "side" : 'front',
+        }   
+        frappe.response.files = files
+        frappe.response.payload = payload
+        
+    frappe.response.relative_path = relative_path
+    frappe.response.file_path = file_path
+    frappe.response.file_name = file_name
+    # return save_itm_image([frappe._dict(data)])
