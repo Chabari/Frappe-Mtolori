@@ -121,7 +121,7 @@ def sync_items():
         items = frappe.db.sql("""
             SELECT name
             FROM `tabItem`
-            WHERE disabled = 0
+            WHERE disabled = 0 AND publish_item = 1
         """, as_dict=1)
         items = [itm.name for itm in items]
         payloads = []
