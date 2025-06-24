@@ -84,8 +84,8 @@ def get_headers():
 
 def get(endpoint):
     response = requests.get(f'{mtolori_main_url()}{endpoint}', headers=get_headers())
-    # if not response.ok:
-    #     return False
+    if not response.ok:
+        return False
     return response.json()
     
 def post(endpoint, payload):
