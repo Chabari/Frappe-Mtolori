@@ -16,8 +16,10 @@ def get_data(
     filters = []
     if item_code:
         filters.append(["item_code", "=", item_code])
+
         
-    warehouses = frappe.get_all("Warehouse", filters={"is_virtual_store": 1}, fields=["name"])
+    # warehouses = frappe.get_all("Warehouse", filters={"is_virtual_store": 1}, fields=["name"])
+    warehouses = frappe.get_all("Warehouse", filters={"name": "Mwea Shop Warehouse - MNA"}, fields=["name"])
         
     filters.append(["warehouse", "in", [w.name for w in warehouses]])
 
