@@ -124,39 +124,7 @@ def sync_items():
             WHERE disabled = 0 AND publish_item = 1
         """, as_dict=1)
         items = [itm.name for itm in items]
-        payloads = []
-        for itm in items:
-            doc = frappe.get_doc('Item', itm)    
-            inventory = []
-            item_data = get_data(doc.item_code)
-            for dt in item_data:
-                shop = frappe.get_doc("Warehouse", dt.warehouse)
-                inventory.append({
-                    # "shop": shop.shop_id,
-                    "quantity": dt.actual_qty,
-                    "buying_price": get_buy_price(doc.item_code),
-                    
-                })
-            # subcategory = 1
-            # if doc.sub_category:
-            #     subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
-                
-            payload = {
-                "erp_serial": doc.item_code,
-                "organization" : 1,
-                "name": doc.item_name,
-                # "description": doc.the_extended_description if doc.the_extended_description else doc.description,
-                # "weight": doc.weight_grams,
-                "sku": doc.item_code,
-                # "subcategory": subcategory,
-                # "is_active": False if doc.disabled == 0 or doc.publish_item == 0 else True,
-                "inventory": inventory
-            }   
-            payloads.append(payload)
-            
-        
-        # frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
-        frappe.response.payloads = payloads
+        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
         return "Success"
     except Exception as e:
         print(str(e))
@@ -178,8 +146,9 @@ def save_itm(items):
             item_data = get_data(doc.item_code)
             for dt in item_data:
                 shop = frappe.get_doc("Warehouse", dt.warehouse)
+                # "shop": shop.shop_id,
                 inventory.append({
-                    "shop": shop.shop_id,
+                    "shop": 1,
                     "quantity": dt.actual_qty,
                     "buying_price": get_buy_price(doc.item_code),
                     
