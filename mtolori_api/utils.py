@@ -133,7 +133,7 @@ def sync_items():
         items = frappe.db.sql("""
             SELECT name
             FROM `tabItem`
-            WHERE disabled = 0 AND publish_item = 1
+            WHERE disabled = 0
         """, as_dict=1)
         items = [itm.name for itm in items]
         payloads = []
@@ -144,24 +144,24 @@ def sync_items():
             for dt in item_data:
                 shop = frappe.get_doc("Warehouse", dt.warehouse)
                 inventory.append({
-                    "shop": shop.shop_id,
+                    # "shop": shop.shop_id,
                     "quantity": dt.actual_qty,
                     "buying_price": get_buy_price(doc.item_code),
                     
                 })
-            subcategory = 1
-            if doc.sub_category:
-                subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
+            # subcategory = 1
+            # if doc.sub_category:
+            #     subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
                 
             payload = {
                 "erp_serial": doc.item_code,
                 "organization" : 1,
                 "name": doc.item_name,
-                "description": doc.the_extended_description if doc.the_extended_description else doc.description,
-                "weight": doc.weight_grams,
+                # "description": doc.the_extended_description if doc.the_extended_description else doc.description,
+                # "weight": doc.weight_grams,
                 "sku": doc.item_code,
-                "subcategory": subcategory,
-                "is_active": False if doc.disabled == 0 or doc.publish_item == 0 else True,
+                # "subcategory": subcategory,
+                # "is_active": False if doc.disabled == 0 or doc.publish_item == 0 else True,
                 "inventory": inventory
             }   
             payloads.append(payload)
