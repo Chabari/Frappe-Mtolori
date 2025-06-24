@@ -175,6 +175,7 @@ def sync_items():
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
+        frappe.response.error = str(e)
         
 def before_save_item(doc, method):
     try:
