@@ -84,8 +84,8 @@ def get_headers():
 
 def get(endpoint):
     response = requests.get(f'{mtolori_main_url()}{endpoint}', headers=get_headers())
-    if not response.ok:
-        return False
+    # if not response.ok:
+    #     return False
     return response.json()
     
 def post(endpoint, payload):
@@ -210,6 +210,9 @@ def save_ids(items):
             }   
             
             res = get(f'/products/{doc.item_code}/')
+            reses.append({
+                "get": res
+            })
             if not res:
                 res = post('/products/', payload)
                 reses.append({
