@@ -112,23 +112,9 @@ def get_buy_price(code):
         limit=1,
     )
     if buy_price:
-        return buy_price.price_list_rate
+        return buy_price[0].price_list_rate
     return 0
 
-def get_sell_price(code):
-    buy_price = frappe.db.get_all(
-        "Item Price",
-        filters={
-            "item_code": code,
-            'price_list': "Standard Buying"
-        },            
-        fields=["price_list_rate"],
-        limit=1,
-    )
-    if buy_price:
-        return buy_price.price_list_rate
-    return 0
-  
 @frappe.whitelist(allow_guest=True)  
 def sync_items():
     try:
