@@ -6,7 +6,7 @@ def price_group():
     items = frappe.db.sql("""
         SELECT name, price_list_name, price_list_id, buying, selling
         FROM `tabPrice List`
-        WHERE enabled=1
+        WHERE enabled=1 AND selling=1
     """, as_dict=1)
     frappe.enqueue('mtolori_api.pricing.save_price_group', queue='long', items=items)
 
@@ -14,7 +14,6 @@ def price_group():
     
 def save_price_group(items):
     logging.info(f"save_price_group called with items: {items}")
-
     try:
         for item in items:
             payload = {
@@ -113,10 +112,12 @@ def save_price(items):
 def item_pricing():
     try:
         items = frappe.db.sql("""
-            SELECT name, item_code, price_list, price_list_rate, buying, selling
-            FROM `tabItem Price`
-            WHERE disabled=0
-        """, as_dict=1)
+            SELECT ip.name, ip.price_list_rate, ip.item_code, ip.price_list, ip.buying, ip.selling
+            FROM `tabItem Price` ip
+            INNER JOIN `tabItem` i ON ip.item_code = i.name
+            WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0
+        """, as_dict=True)
+
         frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items)
                     
         return "Success"
