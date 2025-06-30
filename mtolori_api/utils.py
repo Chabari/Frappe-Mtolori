@@ -279,33 +279,52 @@ def get_item(name):
     item = frappe.get_doc("Item", name)
     
     file_url = item.image
-    file_path = frappe.get_site_path("public", file_url.lstrip('/'))
-    # relative_path = os.path.join('public', file_url.lstrip('/'))
+    # file_path = frappe.get_site_path("public", file_url.lstrip('/'))
+    # # relative_path = os.path.join('public', file_url.lstrip('/'))
 
-    # file_path = frappe.get_site_path(relative_path)
+    # # file_path = frappe.get_site_path(relative_path)
 
-    if not os.path.exists(file_path):
-        frappe.throw(f"File not found at {file_path}")
+    # if not os.path.exists(file_path):
+    #     frappe.throw(f"File not found at {file_path}")
 
-    file_name = os.path.basename(file_path)
+    # file_name = os.path.basename(file_path)
     
-    payload = {
-        "product__erp_serial": item.name,
-        "side" : 'front',
-    }  
+    # payload = {
+    #     "product__erp_serial": item.name,
+    #     "side" : 'front',
+    # }  
     
-    with open(file_path, "rb") as f:
-        files = {
-            'path': (file_name, f, 'image/png')
-        }
+    # with open(file_path, "rb") as f:
+    #     files = {
+    #         'path': (file_name, f, 'image/png')
+    #     }
 
-        response = requests.post(f'{mtolori_main_url()}/product-images/', data=payload, files=files)
+    #     response = requests.post(f'{mtolori_main_url()}/product-images/', data=payload, files=files)
 
     # if response.status_code == 200:
     #     return {"success": True, "response": response.json()}
     # else:
     #     frappe.response.mess = f"Upload failed: {response.status_code} - {response.text}"
     
+    relative_path = os.path.join('public', file_url.lstrip('/'))
+
+    file_path = frappe.get_site_path(relative_path)
+
+    if not os.path.exists(file_path):
+        frappe.throw(f"File not found at {file_path}")
+
+    file_name = os.path.basename(file_path)
+
+    with open(file_path, 'rb') as f:
+        files = {
+            'path': (file_name, f, 'image/png')
+        }
+        payload = {
+            "product__erp_serial": item.name,
+            "side" : 'front',
+        }   
+        response = requests.post(f'{mtolori_main_url()}/product-images/', headers=get_headers(), json=payload, files=files)
+
     frappe.response.mess = response
         
     # frappe.response.files = files
