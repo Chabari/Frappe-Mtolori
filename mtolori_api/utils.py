@@ -301,10 +301,12 @@ def get_item(name):
 
         response = requests.post(f'{mtolori_main_url()}/product-images/', data=payload, files=files)
 
-    if response.status_code == 200:
-        return {"success": True, "response": response.json()}
-    else:
-        frappe.response.mess = f"Upload failed: {response.status_code} - {response.text}"
+    # if response.status_code == 200:
+    #     return {"success": True, "response": response.json()}
+    # else:
+    #     frappe.response.mess = f"Upload failed: {response.status_code} - {response.text}"
+    
+    frappe.response.mess = response
         
     # frappe.response.files = files
     # frappe.response.payload = payload
