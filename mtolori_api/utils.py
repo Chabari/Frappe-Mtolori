@@ -277,32 +277,39 @@ def save_itm_image(items):
 @frappe.whitelist(allow_guest=True) 
 def get_item(name):
     item = frappe.get_doc("Item", name)
-    data = {
-        "name": item.name,
-        "image": item.image,
-    }
+    
     file_url = item.image
-    relative_path = os.path.join('public', file_url.lstrip('/'))
+    file_path = frappe.get_site_path("public", file_url.lstrip('/'))
+    # relative_path = os.path.join('public', file_url.lstrip('/'))
 
-    file_path = frappe.get_site_path(relative_path)
+    # file_path = frappe.get_site_path(relative_path)
 
     if not os.path.exists(file_path):
         frappe.throw(f"File not found at {file_path}")
 
     file_name = os.path.basename(file_path)
-
-    with open(file_path, 'rb') as f:
+    
+    payload = {
+        "product__erp_serial": item.name,
+        "side" : 'front',
+    }  
+    
+    with open(file_path, "rb") as f:
         files = {
             'path': (file_name, f, 'image/png')
         }
-        payload = {
-            "product__erp_serial": item.name,
-            "side" : 'front',
-        }   
-        frappe.response.files = files
-        frappe.response.payload = payload
+
+        response = requests.post(f'{mtolori_main_url()}/product-images/', data=payload, files=files)
+
+    if response.status_code == 200:
+        return {"success": True, "response": response.json()}
+    else:
+        frappe.response.mess = f"Upload failed: {response.status_code} - {response.text}"
         
-    frappe.response.relative_path = relative_path
+    # frappe.response.files = files
+    # frappe.response.payload = payload
+        
+    # frappe.response.relative_path = relative_path
     frappe.response.file_path = file_path
     frappe.response.file_name = file_name
     # return save_itm_image([frappe._dict(data)])
