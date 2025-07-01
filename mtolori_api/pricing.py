@@ -6,7 +6,7 @@ def price_group():
     items = frappe.db.sql("""
         SELECT name, price_list_name, price_list_id, buying, selling
         FROM `tabPrice List`
-        WHERE enabled=1 AND selling=1
+        WHERE enabled=1
     """, as_dict=1)
     frappe.enqueue('mtolori_api.pricing.save_price_group', queue='long', items=items)
 
@@ -21,14 +21,14 @@ def save_price_group(items):
                 "buying": True if item.buying == 1 else False,
                 "selling": True if item.selling == 1 else False,
                 "shop": 1,
-                "erp_serial": item.name,
+                "erp_serial": item.price_list_id,
                 "active": True
             }   
-            res = get(f'/price-list/{item.name}/')
+            res = get(f'/price-list/{item.price_list_id}/')
             if not res:
                 res = post(f'/price-list/', payload)
             else:
-                res = patch(f'/price-list/{item.name}/', payload)
+                res = patch(f'/price-list/{item.price_list_id}/', payload)
 
         frappe.db.commit()
     except Exception as e:
