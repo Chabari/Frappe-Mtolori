@@ -147,6 +147,7 @@ def test_item_price(name):
             res = patch(f'/pricing/{doc.name}/', payload)
             
         # frappe.db.commit() 
+        frappe.response.payload = payload
         frappe.response.message = res
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
