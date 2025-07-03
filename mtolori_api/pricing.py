@@ -43,14 +43,14 @@ def test_price(name):
             "buying": True if doc.buying == 1 else False,
             "selling": True if doc.selling == 1 else False,
             "shop": 1,
-            "erp_serial": doc.name,
+            "erp_serial": doc.price_list_id,
             "active": True
         }
-        res = get(f'/price-list/{doc.name}/')
+        res = get(f'/price-list/{doc.price_list_id}/')
         if not res:
             res = post(f'/price-list/', payload)
         else:
-            res = patch(f'/price-list/{doc.name}/', payload)
+            res = patch(f'/price-list/{doc.price_list_id}/', payload)
             
         # frappe.db.commit() 
         frappe.response.message = res
@@ -125,6 +125,33 @@ def item_pricing():
         frappe.log_error(frappe.get_traceback(), str(e))
         frappe.response.error = str(e)
         frappe.response.message = "Failed. Order not created"
+    
+ 
+@frappe.whitelist(allow_guest=True)  
+def test_item_price(name):
+    try:
+        doc = frappe.get_doc("Item Price", name)
+        price_list = frappe.get_doc("Price List", doc.price_list)
+        payload = {
+            "shop": 1,
+            "product": doc.item_code,
+            "price_list": price_list.price_list_id,
+            "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
+            "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
+            "erp_serial": doc.name
+        }   
+        res = get(f'/pricing/{doc.name}/')
+        if not res:
+            res = post(f'/pricing/', payload)
+        else:
+            res = patch(f'/pricing/{doc.name}/', payload)
+            
+        # frappe.db.commit() 
+        frappe.response.message = res
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+        frappe.response.error = str(e)
+        frappe.response.message = "Failed. Not successful"
     
 def save_customers(customers):
     try:
