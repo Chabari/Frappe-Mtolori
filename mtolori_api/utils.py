@@ -165,7 +165,7 @@ def save_itm(items):
                 "weight": doc.weight_grams,
                 "sku": doc.item_code,
                 "subcategory": subcategory,
-                "is_active": False if doc.disabled == 0 or doc.publish_item == 0 else True,
+                "is_active": True,
                 "inventory": inventory
             }   
             
@@ -205,7 +205,7 @@ def save_ids(items):
                 "weight": doc.weight_grams,
                 "sku": doc.item_code,
                 "subcategory": subcategory,
-                "is_active": False if doc.disabled == 0 or doc.publish_item == 0 else True,
+                "is_active": True,
                 "inventory": inventory
             }   
             
