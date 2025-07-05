@@ -115,7 +115,7 @@ def item_pricing():
             SELECT ip.name, ip.price_list_rate, ip.item_code, ip.price_list, ip.buying, ip.selling
             FROM `tabItem Price` ip
             INNER JOIN `tabItem` i ON ip.item_code = i.name
-            WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0
+            WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0 AND ip.price_list='Retail Base Rate'
         """, as_dict=True)
 
         frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items)
