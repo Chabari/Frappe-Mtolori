@@ -6,6 +6,7 @@ import traceback
 
 @frappe.whitelist(allow_guest=True)  
 def create(**args):
+    return
     try:
         sales_invoice_doc = frappe.db.get_value('Sales Invoice', {'order_id': str(args.get('order_id'))}, ['name'], as_dict=1) 
         if not sales_invoice_doc:

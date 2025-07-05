@@ -143,16 +143,16 @@ def save_itm(items):
         for itm in items:
             doc = frappe.get_doc('Item', itm)    
             inventory = []
-            item_data = get_data(doc.item_code)
-            for dt in item_data:
-                shop = frappe.get_doc("Warehouse", dt.warehouse)
+            # item_data = get_data(doc.item_code)
+            # for dt in item_data:
+                # shop = frappe.get_doc("Warehouse", dt.warehouse)
                 # "shop": shop.shop_id,
-                inventory.append({
-                    "shop": 1,
-                    "quantity": dt.actual_qty,
-                    "buying_price": get_buy_price(doc.item_code),
-                    
-                })
+            inventory.append({
+                "shop": 1,
+                "quantity": 5,
+                "buying_price": get_buy_price(doc.item_code),
+                
+            })
             subcategory = 1
             if doc.sub_category:
                 subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
