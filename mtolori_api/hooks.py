@@ -118,13 +118,16 @@ app_license = "MIT"
 
 doc_events = {
     "Price List": {
-        "before_save": "mtolori_api.pricing.before_save"
+        "on_update": "mtolori_api.pricing.before_save",
+        "after_insert": "mtolori_api.pricing.before_save",
     },
     "Item Price": {
-        "before_save": "mtolori_api.pricing.before_save_price"
+        "on_update": "mtolori_api.pricing.before_save_price",
+        "after_insert": "mtolori_api.pricing.before_save_price",
     },
     "Item": {
-        "before_save": "mtolori_api.utils.before_save_item"
+        "on_update": "mtolori_api.utils.before_save_item",
+        "after_insert": "mtolori_api.utils.before_save_item"
     },
 }
 

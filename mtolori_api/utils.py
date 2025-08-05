@@ -91,14 +91,14 @@ def get(endpoint):
 def post(endpoint, payload):
     response = requests.post(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
     
-    # if not response.ok:
-    #     return False
+    if not response.ok:
+        return False
     return response.json()
 
 def patch(endpoint, payload):
     response = requests.patch(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
-    # if not response.ok:
-    #     return False
+    if not response.ok:
+        return False
     return response.json()
     
 def get_buy_price(code):
@@ -118,12 +118,11 @@ def get_buy_price(code):
 @frappe.whitelist(allow_guest=True)  
 def sync_items():
     try:
-        items = frappe.db.sql("""
+        xitems = frappe.db.sql("""
             SELECT name
             FROM `tabItem`
-            WHERE disabled = 0 AND publish_item = 1
         """, as_dict=1)
-        items = [itm.name for itm in items]
+        items = [itm.name for itm in xitems]
         frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
         return "Success"
     except Exception as e:
@@ -165,13 +164,14 @@ def save_itm(items):
                 "weight": doc.weight_grams,
                 "sku": doc.item_code,
                 "subcategory": subcategory,
-                "is_active": True,
+                "is_active": True if doc.publish_item == 1 else False,
                 "inventory": inventory
             }   
             
             res = get(f'/products/{doc.item_code}/')
             if not res:
-                res = post('/products/', payload)
+                if doc.publish_item == 1:
+                    res = post('/products/', payload)
             else:
                 res = patch(f'/products/{doc.item_code}/', payload)
     except Exception as e:
