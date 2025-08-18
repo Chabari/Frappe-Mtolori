@@ -243,6 +243,25 @@ def save_customer_group(groups):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
     
+@frappe.whitelist(allow_guest=True)
+def save_group(name):
+    try:
+        customer_group = frappe.get_doc("Customer Group", name)
+        price_list_id = frappe.get_value("Price List", customer_group.default_price_list, "price_list_id")
+        payload = {
+            "name": customer_group.customer_group_name,
+            "price_list__erp_serial": price_list_id if price_list_id else customer_group.default_price_list,
+            "active": True,
+            "shop": 1,
+            "erp_serial" : customer_group.name
+        }  
+        res = post2(f'/customer-group/', payload)
+        frappe.db.commit()
+        frappe.response.message = res
+        frappe.response.payload = payload
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+    
     
 @frappe.whitelist(allow_guest=True)  
 def sync_customer_group():
