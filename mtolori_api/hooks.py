@@ -182,6 +182,7 @@ scheduler_events = {
 		"mtolori_api.pricing.price_group",
 		"mtolori_api.pricing.item_pricing",
 		"mtolori_api.pricing.sync_customers",
+		"mtolori_api.pricing.sync_customer_group",
 		"mtolori_api.utils.sync_images",
 	],
 }

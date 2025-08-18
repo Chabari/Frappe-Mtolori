@@ -224,3 +224,32 @@ def sync_customers():
         """, as_dict=1)
     frappe.enqueue('mtolori_api.pricing.save_customers', queue='long', customers=customers)
     return "Success"
+
+ 
+def save_customer_group(groups):
+    try:
+        for c in groups:
+            customer_group = frappe.get_doc("Customer Group", c.name)
+            price_list_id = frappe.get_value("Price List", customer_group.default_price_list, "price_list_id")
+            payload = {
+                "name": customer_group.customer_group_name,
+                "price_list__erp_serial": price_list_id if price_list_id else customer_group.default_price_list,
+                "active": True,
+                "shop": 1,
+                "erp_serial" : customer_group.name
+            }  
+            res = post(f'/customer-group/', payload)
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+    
+    
+@frappe.whitelist(allow_guest=True)  
+def sync_customer_group():
+    groups = frappe.db.sql("""
+            SELECT name
+            FROM `tabCustomer Group`
+            WHERE is_group=0
+        """, as_dict=1)
+    frappe.enqueue('mtolori_api.pricing.save_customer_group', queue='long', groups=groups)
+    return "Success"
