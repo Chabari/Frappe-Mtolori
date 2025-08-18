@@ -189,7 +189,8 @@ def test_save_customer(name):
     
 def save_customers(customers):
     try:
-        for cus in customers:
+        for c in customers:
+            cus = frappe.get_doc("Customer", c.name)
             if cus.mobile_contact_no:
                 customer_group = frappe.get_doc("Customer Group", cus.customer_group)
                 default_price_list = None
