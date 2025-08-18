@@ -95,6 +95,10 @@ def post(endpoint, payload):
         return False
     return response.json()
 
+def post2(endpoint, payload):
+    response = requests.post(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
+    return response.json()
+
 def patch(endpoint, payload):
     response = requests.patch(f'{mtolori_main_url()}{endpoint}', headers=get_headers(), json=payload)
     if not response.ok:

@@ -142,13 +142,46 @@ def test_item_price(name):
         }   
         res = get(f'/pricing/{doc.name}/')
         if not res:
-            res = post(f'/pricing/', payload)
+            res = post2(f'/pricing/', payload)
         else:
             res = patch(f'/pricing/{doc.name}/', payload)
             
         # frappe.db.commit() 
         frappe.response.payload = payload
         frappe.response.message = res
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+        frappe.response.error = str(e)
+        frappe.response.message = "Failed. Not successful"
+    
+    
+@frappe.whitelist(allow_guest=True)  
+def test_save_customer(name):
+    try:
+        cus = frappe.get_doc("Customer", name)
+        if cus.mobile_contact_no:
+            customer_group = frappe.get_doc("Customer Group", cus.customer_group)
+            default_price_list = None
+            if customer_group and customer_group.default_price_list:
+                default_price_list = customer_group.default_price_list
+                
+            if cus.default_price_list:
+                default_price_list = cus.default_price_list
+                
+            if default_price_list:
+                price_list = frappe.get_doc("Price List", default_price_list)
+                    
+                payload = {
+                    "phone_number": cus.mobile_contact_no,
+                    "price_list__erp_serial": price_list.price_list_id,
+                    "shop": 1
+                }   
+                res = post2(f'/price-bias-lookup/', payload)
+                frappe.response.message = res
+                frappe.response.payload = payload
+            
+        # frappe.db.commit() 
+        frappe.response.data = "wuueh"
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
         frappe.response.error = str(e)
