@@ -166,9 +166,14 @@ def save_customers(customers):
                 if cus.default_price_list:
                     default_price_list = cus.default_price_list
                     
+                if not default_price_list:
+                    continue
+                
+                price_list = frappe.get_doc("Price List", default_price_list)
+                    
                 payload = {
                     "phone_number": cus.mobile_contact_no,
-                    "price_list__erp_serial": default_price_list,
+                    "price_list__erp_serial": price_list.price_list_id,
                     "shop": 1
                 }   
                 res = post(f'/price-bias-lookup/', payload)
