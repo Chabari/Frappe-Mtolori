@@ -230,7 +230,7 @@ def save_customer_group(groups):
     try:
         for c in groups:
             customer_group = frappe.get_doc("Customer Group", c.name)
-            price_list_id = frappe.get_value("Price List", customer_group.default_price_list, "price_list_id")
+            price_list_id = frappe.db.get_value("Price List", customer_group.default_price_list, "price_list_id")
             payload = {
                 "name": customer_group.customer_group_name,
                 "price_list__erp_serial": price_list_id if price_list_id else customer_group.default_price_list,
@@ -247,7 +247,7 @@ def save_customer_group(groups):
 def save_group(name):
     try:
         customer_group = frappe.get_doc("Customer Group", name)
-        price_list_id = frappe.get_value("Price List", customer_group.default_price_list, "price_list_id")
+        price_list_id = frappe.db.get_value("Price List", customer_group.default_price_list, "price_list_id")
         payload = {
             "name": customer_group.customer_group_name,
             "price_list__erp_serial": price_list_id if price_list_id else customer_group.default_price_list,
