@@ -257,6 +257,9 @@ def save_group(name):
         }  
         res = post2(f'/customer-group/', payload)
         frappe.db.commit()
+        price_list = frappe.db.get_value('Price List', {'name': customer_group.default_price_list}, ['price_list_id'])
+        frappe.response.price_list_id = price_list_id
+        frappe.response.price_list = price_list
         frappe.response.message = res
         frappe.response.payload = payload
     except Exception as e:
