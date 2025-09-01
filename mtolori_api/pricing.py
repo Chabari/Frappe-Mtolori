@@ -62,29 +62,29 @@ def test_price(name):
 def before_save(doc, method):
     try:
         
-        # payload = {
-        #     "name": doc.price_list_name,
-        #     "price_list": doc.price_list_id,
-        #     "active": True,
-        #     "erp_serial": doc.name,
-        #     "shop": 1
-        # }   
-        # res = get(f'/price-group/{doc.name}/')
-        # if not res:
-        #     res = post(f'/price-group/', payload)
-        # else:
-        #     res = patch(f'/price-group/{doc.name}/', payload)
-        frappe.db.commit() 
-        
+        items = frappe.db.sql(f"""
+            SELECT name, price_list_name, price_list_id, buying, selling
+            FROM `tabPrice List`
+            WHERE enabled=1 AND name='{doc.name}'
+        """, as_dict=1)
+        if items:
+            frappe.enqueue('mtolori_api.pricing.save_price_group', queue='long', items=items)
+            
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
         frappe.response.error = str(e)
         frappe.response.message = "Failed. Order not created"
         
 def before_save_price(doc, method):
-    # save_price(doc)
+    items = frappe.db.sql(f"""
+            SELECT ip.name, ip.price_list_rate, ip.item_code, ip.price_list, ip.buying, ip.selling
+            FROM `tabItem Price` ip
+            INNER JOIN `tabItem` i ON ip.item_code = i.name
+            WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0 AND ip.name='{doc.name}'
+        """, as_dict=True)
+
+    frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items)
         
-    frappe.db.commit() 
     
 def save_price(items):
     try:
@@ -98,12 +98,21 @@ def save_price(items):
                 "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
                 "erp_serial": doc.name
             }   
-            res = get(f'/pricing/{doc.name}/')
-            if not res:
-                res = post(f'/pricing/', payload)
-            else:
-                res = patch(f'/pricing/{doc.name}/', payload)
-                
+            try:
+                res = get(f'/pricing/{doc.name}/')
+            except Exception as e:
+                frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
+                continue
+            
+            try:
+                if not res:
+                    res = post(f'/pricing/', payload)
+                else:
+                    res = patch(f'/pricing/{doc.name}/', payload)
+            except Exception as e:
+                frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
+                continue
+                    
         frappe.db.commit() 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
