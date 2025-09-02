@@ -92,8 +92,8 @@ def save_price(items):
             price_list = frappe.get_doc("Price List", doc.price_list)
             payload = {
                 "shop": 1,
-                "product": doc.item_code,
-                "price_list": price_list.price_list_id,
+                "product__erp_serial": doc.item_code,
+                "price_list__erp_serial": price_list.price_list_id,
                 "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
                 "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
                 "erp_serial": doc.name
@@ -143,8 +143,8 @@ def test_item_price(name):
         price_list = frappe.get_doc("Price List", doc.price_list)
         payload = {
             "shop": 1,
-            "product": doc.item_code,
-            "price_list": price_list.price_list_id,
+            "product__erp_serial": doc.item_code,
+            "price_list__erp_serial": price_list.price_list_id,
             "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
             "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
             "erp_serial": doc.name
