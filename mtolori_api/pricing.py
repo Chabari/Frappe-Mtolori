@@ -87,6 +87,7 @@ def before_save_price(doc, method):
         
     
 def save_price(items):
+
     try:
         for doc in items:
             price_list = frappe.get_doc("Price List", doc.price_list)
@@ -97,21 +98,25 @@ def save_price(items):
                 "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
                 "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
                 "erp_serial": doc.name
-            }   
+            }  
+            res = None 
             try:
                 res = get(f'/pricing/{doc.name}/')
+                try:
+                    if not res:
+                        res = post(f'/pricing/', payload)
+                    else:
+                        res = patch(f'/pricing/{doc.name}/', payload)
+                except Exception as e:
+                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
+                    continue
             except Exception as e:
                 frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
-                continue
-            
-            try:
-                if not res:
+                try:
                     res = post(f'/pricing/', payload)
-                else:
-                    res = patch(f'/pricing/{doc.name}/', payload)
-            except Exception as e:
-                frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
-                continue
+                except Exception as e:
+                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
+                    continue
                     
         frappe.db.commit() 
     except Exception as e:
