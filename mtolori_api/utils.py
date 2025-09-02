@@ -127,7 +127,7 @@ def sync_items():
             FROM `tabItem`
         """, as_dict=1)
         items = [itm.name for itm in xitems]
-        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
+        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items, timeout=60*60*2)
         return "Success"
     except Exception as e:
         print(str(e))
@@ -250,7 +250,7 @@ def sync_images():
             WHERE disabled = 0 AND publish_item = 1
         """, as_dict=1)
         
-        frappe.enqueue('mtolori_api.utils.save_itm_image', queue='long', items=items)
+        frappe.enqueue('mtolori_api.utils.save_itm_image', queue='long', items=items, timeout=60*60*2)
         return "Success"
     except Exception as e:
         print(str(e))

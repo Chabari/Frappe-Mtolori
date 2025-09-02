@@ -127,9 +127,8 @@ def item_pricing():
             WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0
         """, as_dict=True)
 
-        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items)
-        
-        frappe.response.items = items                    
+        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*2)
+                       
         return "Success"
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
