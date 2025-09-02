@@ -128,7 +128,8 @@ def item_pricing():
         """, as_dict=True)
 
         frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items)
-                    
+        
+        frappe.response.items = items                    
         return "Success"
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
