@@ -101,12 +101,12 @@ def save_price(items):
             }  
             res = None 
             try:
-                res = get(f'/pricing/{doc.get('name')}/')
+                res = get(f"/pricing/{doc.get('name')}/")
                 try:
                     if not res:
                         res = post(f'/pricing/', payload)
                     else:
-                        res = patch(f'/pricing/{doc.get('name')}/', payload)
+                        res = patch(f"/pricing/{doc.get('name')}/", payload)
                 except Exception as e:
                     frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.get('item_code')}")
                     continue
