@@ -90,32 +90,32 @@ def save_price(items):
 
     try:
         for doc in items:
-            price_list = frappe.get_doc("Price List", doc.price_list)
+            price_list = frappe.get_doc("Price List", doc.get('price_list'))
             payload = {
                 "shop": 1,
-                "product__erp_serial": doc.item_code,
+                "product__erp_serial": doc.get('item_code'),
                 "price_list__erp_serial": price_list.price_list_id,
-                "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
-                "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
-                "erp_serial": doc.name
+                "selling_price": doc.get('price_list_rate') if doc.get('selling') == 1 else 0.0,
+                "buying_price": doc.get('price_list_rate') if doc.get('buying') == 1 else 0.0,
+                "erp_serial": doc.get('name')
             }  
             res = None 
             try:
-                res = get(f'/pricing/{doc.name}/')
+                res = get(f'/pricing/{doc.get('name')}/')
                 try:
                     if not res:
                         res = post(f'/pricing/', payload)
                     else:
-                        res = patch(f'/pricing/{doc.name}/', payload)
+                        res = patch(f'/pricing/{doc.get('name')}/', payload)
                 except Exception as e:
-                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
+                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.get('item_code')}")
                     continue
             except Exception as e:
-                frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
+                frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.get('item_code')}")
                 try:
                     res = post(f'/pricing/', payload)
                 except Exception as e:
-                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
+                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.get('item_code')}")
                     continue
                     
         frappe.db.commit() 
@@ -133,7 +133,8 @@ def item_pricing():
         """, as_dict=True)
 
         frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*2)
-                       
+        
+        frappe.response.total = len(items)
         return "Success"
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
