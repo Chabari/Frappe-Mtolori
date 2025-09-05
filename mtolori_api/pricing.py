@@ -77,7 +77,7 @@ def before_save(doc, method):
         
 def before_save_price(doc, method):
     items = frappe.db.sql(f"""
-            SELECT ip.name, ip.price_list_rate, ip.item_code, ip.price_list, ip.buying, ip.selling
+            SELECT ip.name
             FROM `tabItem Price` ip
             INNER JOIN `tabItem` i ON ip.item_code = i.name
             WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0 AND ip.name='{doc.name}'
@@ -89,34 +89,39 @@ def before_save_price(doc, method):
 def save_price(items):
 
     try:
-        for doc in items:
-            price_list = frappe.get_doc("Price List", doc.get('price_list'))
+        for x in items:
+            doc = frappe.get_doc("Item Price", x.name)
+            price_list = frappe.get_doc("Price List", doc.price_list)
             payload = {
                 "shop": 1,
-                "product__erp_serial": doc.get('item_code'),
+                "product__erp_serial": doc.item_code,
                 "price_list__erp_serial": price_list.price_list_id,
-                "selling_price": doc.get('price_list_rate') if doc.get('selling') == 1 else 0.0,
-                "buying_price": doc.get('price_list_rate') if doc.get('buying') == 1 else 0.0,
-                "erp_serial": doc.get('name')
+                "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
+                "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
+                "erp_serial": doc.name
             }  
-            res = None 
-            try:
-                res = get(f"/pricing/{doc.get('name')}/")
-                try:
-                    if not res:
-                        res = post(f'/pricing/', payload)
-                    else:
-                        res = patch(f"/pricing/{doc.get('name')}/", payload)
-                except Exception as e:
-                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.get('item_code')}")
-                    continue
-            except Exception as e:
-                frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.get('item_code')}")
-                try:
-                    res = post(f'/pricing/', payload)
-                except Exception as e:
-                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.get('item_code')}")
-                    continue
+            res = get(f"/pricing/{doc.name}/")
+            if not res:
+                res = post2(f'/pricing/', payload)
+            else:
+                res = patch(f"/pricing/{doc.name}/", payload)
+            # try:
+            #     res = get(f"/pricing/{doc.name}/")
+            #     try:
+            #         if not res:
+            #             res = post(f'/pricing/', payload)
+            #         else:
+            #             res = patch(f"/pricing/{doc.name}/", payload)
+            #     except Exception as e:
+            #         frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
+            #         continue
+            # except Exception as e:
+            #     frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
+            #     try:
+            #         res = post(f'/pricing/', payload)
+            #     except Exception as e:
+            #         frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
+            #         continue
                     
         frappe.db.commit() 
     except Exception as e:
@@ -126,7 +131,7 @@ def save_price(items):
 def item_pricing():
     try:
         items = frappe.db.sql("""
-            SELECT ip.name, ip.price_list_rate, ip.item_code, ip.price_list, ip.buying, ip.selling
+            SELECT ip.name
             FROM `tabItem Price` ip
             INNER JOIN `tabItem` i ON ip.item_code = i.name
             WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0
