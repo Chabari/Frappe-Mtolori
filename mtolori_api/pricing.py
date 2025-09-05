@@ -144,25 +144,36 @@ def item_pricing():
 @frappe.whitelist(allow_guest=True)  
 def test_item_price(name):
     try:
-        doc = frappe.get_doc("Item Price", name)
-        price_list = frappe.get_doc("Price List", doc.price_list)
-        payload = {
-            "shop": 1,
-            "product__erp_serial": doc.item_code,
-            "price_list__erp_serial": price_list.price_list_id,
-            "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
-            "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
-            "erp_serial": doc.name
-        }   
-        res = get(f'/pricing/{doc.name}/')
-        if not res:
-            res = post2(f'/pricing/', payload)
-        else:
-            res = patch(f'/pricing/{doc.name}/', payload)
+        # doc = frappe.get_doc("Item Price", name)
+        failed = []
+        success = []
+        items = frappe.db.sql(f"""
+            SELECT ip.name, ip.price_list_rate, ip.item_code, ip.price_list, ip.buying, ip.selling
+            FROM `tabItem Price` ip
+            INNER JOIN `tabItem` i ON ip.item_code = i.name
+            WHERE i.name = '{name}'
+        """, as_dict=True)
+        for doc in items:
+            price_list = frappe.get_doc("Price List", doc.price_list)
+            payload = {
+                "shop": 1,
+                "product__erp_serial": doc.item_code,
+                "price_list__erp_serial": price_list.price_list_id,
+                "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
+                "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
+                "erp_serial": doc.name
+            }   
+            res = get(f'/pricing/{doc.name}/')
+            if not res:
+                res = post2(f'/pricing/', payload)
+                success.append(res)
+            else:
+                res = patch(f'/pricing/{doc.name}/', payload)
+                failed.append(res)
             
         # frappe.db.commit() 
-        frappe.response.payload = payload
-        frappe.response.message = res
+        frappe.response.failed = failed
+        frappe.response.success = success
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
         frappe.response.error = str(e)
