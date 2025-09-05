@@ -102,8 +102,10 @@ def save_price(items):
             }  
             res = get(f"/pricing/{doc.name}/")
             if not res:
+                frappe.logger("scheduler").debug(f"Posting item...... {doc.name}")
                 res = post2(f'/pricing/', payload)
             else:
+                frappe.logger("scheduler").debug(f"patching item...... {doc.name}")
                 res = patch(f"/pricing/{doc.name}/", payload)
             # try:
             #     res = get(f"/pricing/{doc.name}/")
