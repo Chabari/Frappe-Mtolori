@@ -100,30 +100,30 @@ def save_price(items):
                 "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
                 "erp_serial": doc.name
             }  
-            res = get(f"/pricing/{doc.name}/")
-            if not res:
-                frappe.logger("scheduler").debug(f"Posting item...... {doc.name}")
-                res = post2(f'/pricing/', payload)
-            else:
-                frappe.logger("scheduler").debug(f"patching item...... {doc.name}")
-                res = patch(f"/pricing/{doc.name}/", payload)
-            # try:
-            #     res = get(f"/pricing/{doc.name}/")
-            #     try:
-            #         if not res:
-            #             res = post(f'/pricing/', payload)
-            #         else:
-            #             res = patch(f"/pricing/{doc.name}/", payload)
-            #     except Exception as e:
-            #         frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
-            #         continue
-            # except Exception as e:
-            #     frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
-            #     try:
-            #         res = post(f'/pricing/', payload)
-            #     except Exception as e:
-            #         frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
-            #         continue
+            # res = get(f"/pricing/{doc.name}/")
+            # if not res:
+            #     frappe.logger("scheduler").debug(f"Posting item...... {doc.name}")
+            #     res = post2(f'/pricing/', payload)
+            # else:
+            #     frappe.logger("scheduler").debug(f"patching item...... {doc.name}")
+            #     res = patch(f"/pricing/{doc.name}/", payload)
+            try:
+                res = get(f"/pricing/{doc.name}/")
+                try:
+                    if not res:
+                        res = post(f'/pricing/', payload)
+                    else:
+                        res = patch(f"/pricing/{doc.name}/", payload)
+                except Exception as e:
+                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
+                    continue
+            except Exception as e:
+                # frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
+                try:
+                    res = post(f'/pricing/', payload)
+                except Exception as e:
+                    frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
+                    continue
                     
         frappe.db.commit() 
     except Exception as e:
@@ -139,7 +139,7 @@ def item_pricing():
             WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0
         """, as_dict=True)
 
-        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*2)
+        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*4)
         
         frappe.response.total = len(items)
         return "Success"

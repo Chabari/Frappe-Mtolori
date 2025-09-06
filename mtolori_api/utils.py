@@ -127,7 +127,8 @@ def sync_items():
             FROM `tabItem`
         """, as_dict=1)
         items = [itm.name for itm in xitems]
-        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items, timeout=60*60*2)
+        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items, timeout=60*60*4)
+        frappe.response.items_count = len(items)
         return "Success"
     except Exception as e:
         print(str(e))
