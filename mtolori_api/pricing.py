@@ -112,8 +112,14 @@ def save_price(items):
                 try:
                     if not res:
                         res = post(f'/pricing/', payload)
+                        
+                        doc.is_synced = True
+                        doc.save(ignore_permissions=True)
                     else:
                         res = patch(f"/pricing/{doc.name}/", payload)
+                        
+                        doc.is_synced = True
+                        doc.save(ignore_permissions=True)
                 except Exception as e:
                     frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
                     continue
@@ -121,6 +127,9 @@ def save_price(items):
                 # frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
                 try:
                     res = post(f'/pricing/', payload)
+                    
+                    doc.is_synced = True
+                    doc.save(ignore_permissions=True)
                 except Exception as e:
                     frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
                     continue
@@ -142,6 +151,34 @@ def item_pricing():
         frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*4)
         
         frappe.response.total = len(items)
+        return "Success"
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+        frappe.response.error = str(e)
+        frappe.response.message = "Failed. Order not created"
+    
+
+@frappe.whitelist(allow_guest=True)  
+def item_the_pricing(**args):
+    try:
+        start = cint(args.get('start')) if args.get('start') else 0
+        page_length = cint(args.get('page_length')) if args.get('page_length') else 1000
+        
+        items = frappe.db.sql("""
+            SELECT ip.name
+            FROM `tabItem Price` ip
+            INNER JOIN `tabItem` i ON ip.item_code = i.name
+            WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0
+            LIMIT %(page_length)s OFFSET %(start)s 
+        """, {"page_length": page_length, "start": start}, as_dict=True)
+
+        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*4)
+        
+        frappe.response.pagination = {
+            "start": start,
+            "page_length": page_length,
+            "total_count": len(items),
+        }
         return "Success"
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))

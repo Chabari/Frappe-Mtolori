@@ -135,6 +135,31 @@ def sync_items():
         frappe.log_error(frappe.get_traceback(), str(e))
         frappe.response.error = str(e)
         
+
+@frappe.whitelist(allow_guest=True)  
+def sync_the_items(**args):
+    try:
+        start = cint(args.get('start')) if args.get('start') else 0
+        page_length = cint(args.get('page_length')) if args.get('page_length') else 1000
+        xitems = frappe.db.sql("""
+            SELECT name
+            FROM `tabItem`
+            LIMIT %(page_length)s OFFSET %(start)s 
+        """, {"page_length": page_length, "start": start}, as_dict=1)
+        items = [itm.name for itm in xitems]
+        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items, timeout=60*60*1)
+        frappe.response.pagination = {
+            "start": start,
+            "page_length": page_length,
+            "total_count": len(items),
+        }
+        return "Success"
+    except Exception as e:
+        print(str(e))
+        frappe.log_error(frappe.get_traceback(), str(e))
+        frappe.response.error = str(e)
+        
+        
 def before_save_item(doc, method):
     try:
         save_itm([doc.name])
@@ -177,8 +202,13 @@ def save_itm(items):
             if not res:
                 if doc.publish_item == 1:
                     res = post('/products/', payload)
+                    doc.is_synced = True
+                    doc.save(ignore_permissions=True)
             else:
                 res = patch(f'/products/{doc.item_code}/', payload)
+                doc.is_synced = True
+                doc.save(ignore_permissions=True)
+                
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
@@ -215,21 +245,22 @@ def save_ids(items):
             }
             try:
                 res = get(f'/products/{doc.item_code}/')
-            except Exception as e:
-                frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
-                continue 
-            
-            reses.append({
-                "get": res
-            })
-            try:
+                reses.append({
+                    "get": res
+                })
                 if not res:
                     res = post('/products/', payload)
+                    if res:
+                        doc.is_synced = True
+                        doc.save(ignore_permissions=True)
                     reses.append({
                         "post": res
                     })
                 else:
                     res = patch(f'/products/{doc.item_code}/', payload)
+                    if res:
+                        doc.is_synced = True
+                        doc.save(ignore_permissions=True)
                     reses.append({
                         "patch": res
                     })
