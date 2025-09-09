@@ -244,10 +244,11 @@ def save_ids(items):
                 "get": res
             })
             if not res:
-                res = post('/products/', payload)
-                reses.append({
-                    "post": res
-                })
+                if doc.publish_item == 1:
+                    res = post('/products/', payload)
+                    reses.append({
+                        "post": res
+                    })
             else:
                 res = patch(f'/products/{doc.item_code}/', payload)
                 reses.append({

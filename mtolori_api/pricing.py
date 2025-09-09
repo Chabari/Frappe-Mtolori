@@ -112,14 +112,8 @@ def save_price(items):
                 try:
                     if not res:
                         res = post(f'/pricing/', payload)
-                        
-                        doc.is_synced = True
-                        doc.save(ignore_permissions=True)
                     else:
                         res = patch(f"/pricing/{doc.name}/", payload)
-                        
-                        doc.is_synced = True
-                        doc.save(ignore_permissions=True)
                 except Exception as e:
                     frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
                     continue
@@ -127,9 +121,6 @@ def save_price(items):
                 # frappe.log_error(frappe.get_traceback(), f"GET failed for {doc.item_code}")
                 try:
                     res = post(f'/pricing/', payload)
-                    
-                    doc.is_synced = True
-                    doc.save(ignore_permissions=True)
                 except Exception as e:
                     frappe.log_error(frappe.get_traceback(), f"POST failed for {doc.item_code}")
                     continue
