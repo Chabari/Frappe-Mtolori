@@ -239,24 +239,21 @@ def save_ids(items):
                 "is_active": True,
                 "inventory": inventory
             }
-            try:
-                res = get(f'/products/{doc.item_code}/')
+            res = get(f'/products/{doc.item_code}/')
+            reses.append({
+                "get": res
+            })
+            if not res:
+                res = post('/products/', payload)
                 reses.append({
-                    "get": res
+                    "post": res
                 })
-                if not res:
-                    res = post('/products/', payload)
-                    reses.append({
-                        "post": res
-                    })
-                else:
-                    res = patch(f'/products/{doc.item_code}/', payload)
-                    reses.append({
-                        "patch": res
-                    })
-            except Exception as e:
-                frappe.log_error(frappe.get_traceback(), f"POST/PATCH failed for {doc.item_code}")
-                continue
+            else:
+                res = patch(f'/products/{doc.item_code}/', payload)
+                reses.append({
+                    "patch": res
+                })
+            
         return reses
     except Exception as e:
         print(str(e))
