@@ -151,7 +151,7 @@ def sync_the_items(**args):
         frappe.response.pagination = {
             "start": start,
             "page_length": page_length,
-            "total_count": len(items),
+            "total_count": frappe.db.count("Item"),
         }
         return "Success"
     except Exception as e:
@@ -202,12 +202,8 @@ def save_itm(items):
             if not res:
                 if doc.publish_item == 1:
                     res = post('/products/', payload)
-                    doc.is_synced = True
-                    doc.save(ignore_permissions=True)
             else:
                 res = patch(f'/products/{doc.item_code}/', payload)
-                doc.is_synced = True
-                doc.save(ignore_permissions=True)
                 
     except Exception as e:
         print(str(e))
@@ -250,17 +246,11 @@ def save_ids(items):
                 })
                 if not res:
                     res = post('/products/', payload)
-                    if res:
-                        doc.is_synced = True
-                        doc.save(ignore_permissions=True)
                     reses.append({
                         "post": res
                     })
                 else:
                     res = patch(f'/products/{doc.item_code}/', payload)
-                    if res:
-                        doc.is_synced = True
-                        doc.save(ignore_permissions=True)
                     reses.append({
                         "patch": res
                     })
