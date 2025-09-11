@@ -137,7 +137,7 @@ def item_pricing():
             WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0
         """, as_dict=True)
 
-        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*4)
+        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*6)
         
         frappe.response.total = len(items)
         return "Success"
