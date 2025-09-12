@@ -92,19 +92,20 @@ def save_price(items):
         for x in items:
             doc = frappe.get_doc("Item Price", x.name)
             price_list = frappe.get_doc("Price List", doc.price_list)
-            payload = {
-                "shop": 1,
-                "product__erp_serial": doc.item_code,
-                "price_list__erp_serial": price_list.price_list_id,
-                "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
-                "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
-                "erp_serial": doc.name
-            }  
-            res = get(f"/pricing/{doc.name}/")
-            if not res:
-                res = post2(f'/pricing/', payload)
-            else:
-                res = patch(f"/pricing/{doc.name}/", payload)
+            if price_list.enabled == 1:
+                payload = {
+                    "shop": 1,
+                    "product__erp_serial": doc.item_code,
+                    "price_list__erp_serial": price_list.price_list_id,
+                    "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
+                    "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
+                    "erp_serial": doc.name
+                }  
+                res = get(f"/pricing/{doc.name}/")
+                if not res:
+                    res = post2(f'/pricing/', payload)
+                else:
+                    res = patch(f"/pricing/{doc.name}/", payload)
             # try:
             #     res = get(f"/pricing/{doc.name}/")
             #     try:
@@ -134,7 +135,8 @@ def item_pricing():
             SELECT ip.name
             FROM `tabItem Price` ip
             INNER JOIN `tabItem` i ON ip.item_code = i.name
-            WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0
+            LEFT JOIN `tabPrice List` pl ON ip.price_list = pl.name
+            WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0 AND pl.enabled=1
         """, as_dict=True)
 
         frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*6)
