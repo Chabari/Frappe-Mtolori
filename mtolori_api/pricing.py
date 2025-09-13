@@ -336,3 +336,51 @@ def sync_customer_group():
         """, as_dict=1)
     frappe.enqueue('mtolori_api.pricing.save_customer_group', queue='long', groups=groups)
     return "Success"
+
+
+@frappe.whitelist(allow_guest=True)  
+def initiate_batch_item_pricing():
+    frappe.enqueue('mtolori_api.pricing.batch_item_pricing', queue='long', timeout=60*60*4)
+    return "Success"
+
+@frappe.whitelist(allow_guest=True)  
+def batch_item_pricing():
+    try:
+        chunk_size = 15000
+        start = 0
+        while True:
+            items = frappe.db.sql("""
+                SELECT ip.name
+                FROM `tabItem Price` ip
+                INNER JOIN `tabItem` i ON ip.item_code = i.name
+                LEFT JOIN `tabPrice List` pl ON ip.price_list = pl.name
+                WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0 AND pl.enabled=1
+                LIMIT {start}, {limit}
+            """.format(start=start, limit=chunk_size), as_dict=True)
+            if not items:
+                break
+            
+            payload = []
+            
+            for x in items:
+                doc = frappe.get_doc("Item Price", x.name)
+                price_list = frappe.get_doc("Price List", doc.price_list)
+                if price_list.enabled == 1:
+                    paydt = {
+                        "shop": 1,
+                        "product__erp_serial": doc.item_code,
+                        "price_list__erp_serial": price_list.price_list_id,
+                        "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
+                        "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
+                        "erp_serial": doc.name
+                    }  
+                    payload.append(paydt)
+            if payload:
+                res = post2(f'/pricing/', payload)
+                        
+            start += chunk_size
+
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+    
