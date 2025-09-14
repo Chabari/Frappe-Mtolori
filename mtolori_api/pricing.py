@@ -90,22 +90,23 @@ def save_price(items):
 
     try:
         for x in items:
-            doc = frappe.get_doc("Item Price", x.name)
-            price_list = frappe.get_doc("Price List", doc.price_list)
-            if price_list.enabled == 1:
-                payload = {
-                    "shop": 1,
-                    "product__erp_serial": doc.item_code,
-                    "price_list__erp_serial": price_list.price_list_id,
-                    "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
-                    "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
-                    "erp_serial": doc.name
-                }  
-                res = get(f"/pricing/{doc.name}/")
-                if not res:
-                    res = post2(f'/pricing/', payload)
-                else:
-                    res = patch(f"/pricing/{doc.name}/", payload)
+            if x.name:
+                doc = frappe.get_doc("Item Price", x.name)
+                price_list = frappe.get_doc("Price List", doc.price_list)
+                if price_list.enabled == 1 and doc.item_code:
+                    payload = {
+                        "shop": 1,
+                        "product__erp_serial": doc.item_code,
+                        "price_list__erp_serial": price_list.price_list_id,
+                        "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
+                        "buying_price": doc.price_list_rate if doc.buying == 1 else 0.0,
+                        "erp_serial": doc.name
+                    }  
+                    res = get(f"/pricing/{doc.name}/")
+                    if not res:
+                        res = post2(f'/pricing/', payload)
+                    else:
+                        res = patch(f"/pricing/{doc.name}/", payload)
             # try:
             #     res = get(f"/pricing/{doc.name}/")
             #     try:
@@ -365,7 +366,7 @@ def batch_item_pricing():
             for x in items:
                 doc = frappe.get_doc("Item Price", x.name)
                 price_list = frappe.get_doc("Price List", doc.price_list)
-                if price_list.enabled == 1:
+                if price_list.enabled == 1 and doc.item_code:
                     paydt = {
                         "shop": 1,
                         "product__erp_serial": doc.item_code,
