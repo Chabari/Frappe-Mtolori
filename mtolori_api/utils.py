@@ -172,12 +172,8 @@ def save_itm(items):
         for itm in items:
             doc = frappe.get_doc('Item', itm)    
             inventory = []
-            # item_data = get_data(doc.item_code)
-            # for dt in item_data:
-                # shop = frappe.get_doc("Warehouse", dt.warehouse)
-                # "shop": shop.shop_id,
             inventory.append({
-                "shop": 1,
+                "shop_id": 1,
                 "quantity": 5,
                 "buying_price": get_buy_price(doc.item_code),
                 
@@ -188,12 +184,12 @@ def save_itm(items):
                 
             payload = {
                 "erp_serial": doc.item_code,
-                "organization" : 1,
+                "organization_id" : 1,
                 "name": doc.item_name,
                 "description": doc.the_extended_description if doc.the_extended_description else doc.description,
                 "weight": doc.weight_grams,
                 "sku": doc.item_code,
-                "subcategory": subcategory,
+                "subcategory_id": subcategory,
                 "is_active": True if doc.publish_item == 1 else False,
                 "inventory": inventory
             }   
@@ -220,7 +216,7 @@ def save_ids(items):
             for dt in item_data:
                 shop = frappe.get_doc("Warehouse", dt.warehouse)
                 inventory.append({
-                    "shop": shop.shop_id,
+                    "shop_id": shop.shop_id,
                     "quantity": dt.actual_qty,
                     "buying_price": get_buy_price(doc.item_code)
                 })
@@ -230,12 +226,12 @@ def save_ids(items):
                 
             payload = {
                 "erp_serial": doc.item_code,
-                "organization" : 1,
+                "organization_id" : 1,
                 "name": doc.item_name,
                 "description": doc.the_extended_description if doc.the_extended_description else doc.description,
                 "weight": doc.weight_grams,
                 "sku": doc.item_code,
-                "subcategory": subcategory,
+                "subcategory_id": subcategory,
                 "is_active": True,
                 "inventory": inventory
             }
@@ -363,4 +359,60 @@ def get_item(name):
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
         
+    
+
+@frappe.whitelist(allow_guest=True)  
+def initiate_batch_item():
+    frappe.enqueue('mtolori_api.utils.batch_item', queue='long', timeout=60*60*4)
+    return "Success"
+
+@frappe.whitelist(allow_guest=True)  
+def batch_item():
+    try:
+        chunk_size = 7000
+        start = 0
+        while True:
+            items = frappe.db.sql("""
+                SELECT name
+                FROM `tabItem`
+                LIMIT {start}, {limit}
+            """.format(start=start, limit=chunk_size), as_dict=True)
+            if not items:
+                break
+            
+            payload = []
+            
+            for x in items:
+                doc = frappe.get_doc('Item', x.name)    
+                inventory = []
+                inventory.append({
+                    "shop_id": 1,
+                    "quantity": 5,
+                    "buying_price": get_buy_price(doc.item_code),
+                    
+                })
+                subcategory = 1
+                if doc.sub_category:
+                    subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
+                    
+                pd = {
+                    "erp_serial": doc.item_code,
+                    "organization_id" : 1,
+                    "name": doc.item_name,
+                    "description": doc.the_extended_description if doc.the_extended_description else doc.description,
+                    "weight": doc.weight_grams,
+                    "sku": doc.item_code,
+                    "subcategory_id": subcategory,
+                    "is_active": True if doc.publish_item == 1 else False,
+                    "inventory": inventory
+                }   
+                payload.append(pd)
+            if payload:
+                res = post('/products/', payload)
+                        
+            start += chunk_size
+
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
     
