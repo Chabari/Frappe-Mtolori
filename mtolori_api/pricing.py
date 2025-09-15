@@ -368,7 +368,7 @@ def batch_item_pricing():
                 price_list = frappe.get_doc("Price List", doc.price_list)
                 if price_list.enabled == 1 and doc.item_code:
                     paydt = {
-                        "shop": 1,
+                        "shop_id": 1,
                         "product__erp_serial": doc.item_code,
                         "price_list__erp_serial": price_list.price_list_id,
                         "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,

@@ -359,8 +359,6 @@ def get_item(name):
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
         
-    
-
 @frappe.whitelist(allow_guest=True)  
 def initiate_batch_item():
     frappe.enqueue('mtolori_api.utils.batch_item', queue='long', timeout=60*60*4)
