@@ -128,27 +128,6 @@ def save_price(items):
         frappe.db.commit() 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
-    
-@frappe.whitelist(allow_guest=True)  
-def item_pricing():
-    try:
-        items = frappe.db.sql("""
-            SELECT ip.name
-            FROM `tabItem Price` ip
-            INNER JOIN `tabItem` i ON ip.item_code = i.name
-            LEFT JOIN `tabPrice List` pl ON ip.price_list = pl.name
-            WHERE i.disabled = 0 AND i.publish_item = 1 AND ip.disabled = 0 AND pl.enabled=1
-        """, as_dict=True)
-
-        frappe.enqueue('mtolori_api.pricing.save_price', queue='long', items=items, timeout=60*60*6)
-        
-        frappe.response.total = len(items)
-        return "Success"
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), str(e))
-        frappe.response.error = str(e)
-        frappe.response.message = "Failed. Order not created"
-    
 
 @frappe.whitelist(allow_guest=True)  
 def item_the_pricing(**args):
@@ -279,12 +258,7 @@ def save_customers(customers):
     
 @frappe.whitelist(allow_guest=True)  
 def sync_customers():
-    customers = frappe.db.sql("""
-            SELECT name, default_price_list, mobile_contact_no, customer_group
-            FROM `tabCustomer`
-            WHERE disabled=0
-        """, as_dict=1)
-    frappe.enqueue('mtolori_api.pricing.save_customers', queue='long', customers=customers)
+    frappe.enqueue('mtolori_api.pricing.batch_customers', queue='long')
     return "Success"
 
  
@@ -340,7 +314,7 @@ def sync_customer_group():
 
 
 @frappe.whitelist(allow_guest=True)  
-def initiate_batch_item_pricing():
+def item_pricing():
     frappe.enqueue('mtolori_api.pricing.batch_item_pricing', queue='long', timeout=60*60*4)
     return "Success"
 
@@ -378,6 +352,55 @@ def batch_item_pricing():
                     payload.append(paydt)
             if payload:
                 res = post2(f'/pricing/', payload)
+                        
+            start += chunk_size
+
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+    
+@frappe.whitelist(allow_guest=True)  
+def batch_customers():
+    try:
+        
+        chunk_size = 15000
+        start = 0
+        while True:
+            customers = frappe.db.sql("""
+                SELECT name, default_price_list, mobile_contact_no, customer_group
+                FROM `tabCustomer`
+                WHERE disabled=0
+                LIMIT {start}, {limit}
+            """.format(start=start, limit=chunk_size), as_dict=1)
+            if not customers:
+                break
+            
+            payload = []
+            
+            for x in customers:
+                cus = frappe.get_doc("Customer", x.name)
+                if cus.mobile_contact_no:
+                    customer_group = frappe.get_doc("Customer Group", cus.customer_group)
+                    default_price_list = None
+                    if customer_group and customer_group.default_price_list:
+                        default_price_list = customer_group.default_price_list
+                        
+                    if cus.default_price_list:
+                        default_price_list = cus.default_price_list
+                        
+                    if not default_price_list:
+                        continue
+                    
+                    price_list = frappe.get_doc("Price List", default_price_list)
+                        
+                    pdt = {
+                        "phone_number": cus.mobile_contact_no,
+                        "price_list__erp_serial": price_list.price_list_id,
+                        "shop": 1
+                    }
+                    payload.append(pdt)
+            if payload:
+                res = post(f'/price-bias-lookup/', payload)
                         
             start += chunk_size
 
