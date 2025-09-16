@@ -252,7 +252,7 @@ def sync_images():
             WHERE disabled = 0 AND publish_item = 1
         """, as_dict=1)
         
-        frappe.enqueue('mtolori_api.utils.save_itm_image', queue='long', items=items, timeout=60*60*2)
+        frappe.enqueue('mtolori_api.utils.save_itm_image', queue='long', items=items, timeout=60*60*4)
         return "Success"
     except Exception as e:
         print(str(e))
@@ -368,7 +368,7 @@ def save_itm_image(items):
                         'path': (file_name, f, 'image/png')
                     }
 
-                    response = requests.post(f'{mtolori_main_url()}/product-images/', data=payload, files=files)
+                    response = requests.post(f'{mtolori_main_url()}/product-images/', data=payload, files=files, headers=get_headers())
                 if not response.ok:
                     print(f"Failed to upload image for {itm.name}: {response.text}")
                     frappe.log_error("Failed to log", f"Failed to upload front image for {itm.name}: {response.text}")
@@ -391,7 +391,7 @@ def save_itm_image(items):
                         'path': (file_name, f, 'image/png')
                     }
 
-                    response = requests.post(f'{mtolori_main_url()}/product-images/', data=payload, files=files)
+                    response = requests.post(f'{mtolori_main_url()}/product-images/', data=payload, files=files, headers=get_headers())
                 if not response.ok:
                     print(f"Failed to upload image for {itm.name}: {response.text}")
                     frappe.log_error("Failed to log", f"Failed to upload back image for {itm.name}: {response.text}")
@@ -450,7 +450,7 @@ def zip_and_upload():
                 
                 frappe.db.commit()
 
-                response = requests.post(f'{mtolori_main_url()}/product-images/', files=files, timeout=6000)
+                response = requests.post(f'{mtolori_main_url()}/product-images/', files=files, headers=get_headers(), timeout=6000)
                 if not response.ok:
                     print(f"Failed to upload zip: {response.text}")
                     frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
