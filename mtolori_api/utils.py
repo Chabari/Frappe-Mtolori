@@ -410,57 +410,73 @@ def save_images():
 def zip_and_upload():
     chunk_size = 50
     start = 0
+
     while True:
-        
-        zip_name = f"exported_files_{start}.zip"
-        zip_path = os.path.join(frappe.get_site_path("private", "files"), zip_name)
+        # Safer query with placeholders
         items = frappe.db.sql("""
-                SELECT name, image, back_image
-                FROM `tabItem`
-                WHERE disabled = 0 AND publish_item = 1
-                LIMIT {start}, {limit}
-            """.format(start=start, limit=chunk_size), as_dict=1)
-        
+            SELECT name, image, back_image
+            FROM `tabItem`
+            WHERE disabled = 0 AND publish_item = 1
+            LIMIT %s OFFSET %s
+        """, (chunk_size, start), as_dict=1)
+
         if not items:
+            print("No more items found, breaking loop.")
             break
 
+        zip_name = f"exported_files_{start}.zip"
+        zip_path = os.path.join(frappe.get_site_path("private", "files"), zip_name)
+
         try:
-            
             with zipfile.ZipFile(zip_path, "w") as zf:
                 for f in items:
-                    if f.image: 
-                        file_path = frappe.get_site_path("public", f.image.lstrip('/'))
-                        if not os.path.exists(file_path):
-                            continue
-                        _, ext = os.path.splitext(file_path)
+                    # Handle front image
+                    if f.image:
+                        file_path = frappe.get_site_path("public", f.image.lstrip("/"))
+                        if os.path.exists(file_path):
+                            _, ext = os.path.splitext(file_path)
+                            custom_name = f"{f.name}_front{ext}"
+                            zf.write(file_path, arcname=custom_name)
+                        else:
+                            print(f"Front image not found: {file_path}")
 
-                        custom_name = f"{f.name}_front{ext}"
+                    # Handle back image
+                    if f.back_image:
+                        file_path = frappe.get_site_path("public", f.back_image.lstrip("/"))
+                        if os.path.exists(file_path):
+                            _, ext = os.path.splitext(file_path)
+                            custom_name = f"{f.name}_back{ext}"
+                            zf.write(file_path, arcname=custom_name)
+                        else:
+                            print(f"Back image not found: {file_path}")
 
-                        zf.write(file_path, arcname=custom_name)
-                        
-                    if f.back_image: 
-                        file_path = frappe.get_site_path("public", f.back_image.lstrip('/'))
-                        if not os.path.exists(file_path):
-                            continue
-                        _, ext = os.path.splitext(file_path)
-
-                        custom_name = f"{f.name}_back{ext}"
-
-                        zf.write(file_path, arcname=custom_name)
-                        
+            # Upload to external API
             with open(zip_path, "rb") as f:
                 files = {"file": (zip_name, f, "application/zip")}
-                headers = {
-                    "Authorization": f"Token {mtolori_api_key()}"
-                }
-                response = requests.post('https://mtolori.com/api/product-images/upload-zip/', files=files, headers=headers, timeout=60000)
-                if not response.ok:
-                    print(f"Failed to upload zip: {response.text}")
-                    frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
-                            
+                headers = {"Authorization": f"Token {mtolori_api_key()}"}
+                try:
+                    response = requests.post(
+                        "https://mtolori.com/api/product-images/upload-zip/",
+                        files=files,
+                        headers=headers,
+                        timeout=(30, 600)  # 30s connect, 10min read
+                    )
+                except requests.exceptions.RequestException as e:
+                    frappe.log_error(f"Request failed: {str(e)}", "Upload Error")
+                    print(f"Request failed: {str(e)}")
+                    break  # stop loop if API is unreachable
+
+                if response.ok:
+                    print(f"✅ Uploaded {zip_name} successfully")
+                else:
+                    frappe.log_error(f"Status: {response.status_code}, Body: {response.text}", "Upload Error")
+                    print(f"❌ Failed to upload {zip_name} -> {response.status_code}: {response.text}")
+                    break  # stop loop if API rejects request
 
         finally:
-            print("doeeeeeeeeeeeeeeeeeeeeeeeee")
-            # if os.path.exists(zip_path):
-            #     os.remove(zip_path)
+            # Cleanup
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+                print(f"Removed {zip_path}")
+
         start += chunk_size
