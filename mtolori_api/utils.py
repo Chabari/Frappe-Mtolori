@@ -408,7 +408,7 @@ def save_images():
 
 @frappe.whitelist(allow_guest=True) 
 def zip_and_upload():
-    chunk_size = 500
+    chunk_size = 50
     start = 0
     while True:
     
