@@ -459,7 +459,8 @@ def zip_and_upload():
                         "https://mtolori.com/api/product-images/upload-zip/",
                         files=files,
                         headers=headers,
-                        timeout=(30, 600)  # 30s connect, 10min read
+                        timeout=(30, 600),  # 30s connect, 10min read
+                        stream=True
                     )
                 except requests.exceptions.RequestException as e:
                     frappe.log_error(f"Request failed: {str(e)}", "Upload Error")
