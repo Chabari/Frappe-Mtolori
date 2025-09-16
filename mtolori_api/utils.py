@@ -408,59 +408,67 @@ def save_images():
 
 @frappe.whitelist(allow_guest=True) 
 def zip_and_upload():
+    chunk_size = 1000
+    start = 0
+    while True:
     
-    # Define zip path
-    zip_name = "exported_files.zip"
-    zip_path = os.path.join(frappe.get_site_path("private", "files"), zip_name)
-    items = frappe.db.sql("""
-            SELECT name, image, back_image
-            FROM `tabItem`
-            WHERE disabled = 0 AND publish_item = 1
-        """, as_dict=1)
+        # Define zip path
+        zip_name = "exported_files.zip"
+        zip_path = os.path.join(frappe.get_site_path("private", "files"), zip_name)
+        items = frappe.db.sql("""
+                SELECT name, image, back_image
+                FROM `tabItem`
+                WHERE disabled = 0 AND publish_item = 1
+                LIMIT {start}, {limit}
+            """, as_dict=1)
 
-    try:
-        
-        # Create ZIP
-        with zipfile.ZipFile(zip_path, "w") as zf:
-            for f in items:
-                if f.image: 
-                    file_path = frappe.get_site_path("public", f.image.lstrip('/'))
-                    if not os.path.exists(file_path):
-                        continue
-                    # Extract extension from original file
-                    _, ext = os.path.splitext(file_path)
-
-                    # Build custom filename e.g. 10001_front.png
-                    custom_name = f"{f.name}_front{ext}"
-
-                    # Add to zip with custom name
-                    zf.write(file_path, arcname=custom_name)
-                    
-                if f.back_image: 
-                    file_path = frappe.get_site_path("public", f.back_image.lstrip('/'))
-                    if not os.path.exists(file_path):
-                        continue
-                    # Extract extension from original file
-                    _, ext = os.path.splitext(file_path)
-
-                    # Build custom filename e.g. 10001_front.png
-                    custom_name = f"{f.name}_back{ext}"
-
-                    # Add to zip with custom name
-                    zf.write(file_path, arcname=custom_name)
-                    
-        with open(zip_path, "rb") as f:
-            files = {"file": (zip_name, f, "application/zip")}
-
-            response = requests.post(f'{mtolori_main_url()}/product-images/', files=files, headers=get_headers())
-            if not response.ok:
-                print(f"Failed to upload zip: {response.text}")
-                frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
-                return {"status": "success", "response": response}
+        try:
             
-        return {"status": "success", "response": response.json()}
+            # Create ZIP
+            with zipfile.ZipFile(zip_path, "w") as zf:
+                for f in items:
+                    if f.image: 
+                        file_path = frappe.get_site_path("public", f.image.lstrip('/'))
+                        if not os.path.exists(file_path):
+                            continue
+                        # Extract extension from original file
+                        _, ext = os.path.splitext(file_path)
 
-    finally:
-        # Always delete the zip file, even if upload fails
-        if os.path.exists(zip_path):
-            os.remove(zip_path)
+                        # Build custom filename e.g. 10001_front.png
+                        custom_name = f"{f.name}_front{ext}"
+
+                        # Add to zip with custom name
+                        zf.write(file_path, arcname=custom_name)
+                        
+                    if f.back_image: 
+                        file_path = frappe.get_site_path("public", f.back_image.lstrip('/'))
+                        if not os.path.exists(file_path):
+                            continue
+                        # Extract extension from original file
+                        _, ext = os.path.splitext(file_path)
+
+                        # Build custom filename e.g. 10001_front.png
+                        custom_name = f"{f.name}_back{ext}"
+
+                        # Add to zip with custom name
+                        zf.write(file_path, arcname=custom_name)
+                        
+            with open(zip_path, "rb") as f:
+                files = {"file": (zip_name, f, "application/zip")}
+                
+                frappe.db.commit()
+
+                response = requests.post(f'{mtolori_main_url()}/product-images/', files=files, headers=get_headers())
+                if not response.ok:
+                    print(f"Failed to upload zip: {response.text}")
+                    frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
+                    # return {"status": "success", "response": response}
+                
+            # return {"status": "success", "response": response.json()}
+            
+
+        finally:
+            # Always delete the zip file, even if upload fails
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+        start += chunk_size
