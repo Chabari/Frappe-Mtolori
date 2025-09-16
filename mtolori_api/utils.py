@@ -453,7 +453,7 @@ def zip_and_upload():
                 headers = {
                     "Authorization": f"Token {mtolori_api_key()}"
                 }
-                response = requests.post('https://mtolori.com/api/product-images/upload-zip/', files=files, headers=headers, timeout=6000)
+                response = requests.post('https://mtolori.com/api/product-images/upload-zip/', files=files, headers=headers, timeout=60000)
                 if not response.ok:
                     print(f"Failed to upload zip: {response.text}")
                     frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
