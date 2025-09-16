@@ -448,7 +448,7 @@ def zip_and_upload():
             with open(zip_path, "rb") as f:
                 files = {"file": (zip_name, f, "application/zip")}
 
-                response = requests.post('https://mtolori.com/api/product-images/upload-zip/', files=files, headers=get_headers("multipart/form-data"), timeout=600000)
+                response = requests.post('https://mtolori.com/api/product-images/upload-zip/', files=files, headers=get_headers("multipart/form-data"), timeout=6000)
                 if not response.ok:
                     print(f"Failed to upload zip: {response.text}")
                     frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
