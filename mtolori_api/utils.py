@@ -408,7 +408,7 @@ def save_images():
 
 @frappe.whitelist(allow_guest=True) 
 def zip_and_upload():
-    chunk_size = 1000
+    chunk_size = 500
     start = 0
     while True:
     
@@ -458,7 +458,7 @@ def zip_and_upload():
                 
                 frappe.db.commit()
 
-                response = requests.post(f'{mtolori_main_url()}/product-images/', files=files, headers=get_headers())
+                response = requests.post(f'{mtolori_main_url()}/product-images/', files=files, headers=get_headers(), timeout=6000)
                 if not response.ok:
                     print(f"Failed to upload zip: {response.text}")
                     frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
