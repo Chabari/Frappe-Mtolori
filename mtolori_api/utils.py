@@ -468,7 +468,8 @@ def zip_and_upload():
             
 
         finally:
+            print("doeeeeeeeeeeeeeeeeeeeeeeeee")
             # Always delete the zip file, even if upload fails
-            if os.path.exists(zip_path):
-                os.remove(zip_path)
+            # if os.path.exists(zip_path):
+            #     os.remove(zip_path)
         start += chunk_size
