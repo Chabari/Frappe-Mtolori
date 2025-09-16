@@ -77,9 +77,9 @@ def mtolori_main_url():
 def mtolori_api_key():
     return get_main_company().mtolori_api_key
 
-def get_headers(content_type = "application/json"):
+def get_headers():
     headers = {
-        "Content-Type": content_type,
+        "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": f"Token {mtolori_api_key()}"
     }
@@ -420,6 +420,9 @@ def zip_and_upload():
                 WHERE disabled = 0 AND publish_item = 1
                 LIMIT {start}, {limit}
             """.format(start=start, limit=chunk_size), as_dict=1)
+        
+        if not items:
+            break
 
         try:
             
@@ -447,8 +450,10 @@ def zip_and_upload():
                         
             with open(zip_path, "rb") as f:
                 files = {"file": (zip_name, f, "application/zip")}
-
-                response = requests.post('https://mtolori.com/api/product-images/upload-zip/', files=files, headers=get_headers("multipart/form-data"), timeout=6000)
+                headers = {
+                    "Authorization": f"Token {mtolori_api_key()}"
+                }
+                response = requests.post('https://mtolori.com/api/product-images/upload-zip/', files=files, headers=headers, timeout=6000)
                 if not response.ok:
                     print(f"Failed to upload zip: {response.text}")
                     frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
