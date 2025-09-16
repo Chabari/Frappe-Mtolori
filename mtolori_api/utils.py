@@ -411,8 +411,8 @@ def zip_and_upload():
     chunk_size = 50
     start = 0
     while True:
-    
-        zip_name = "exported_files.zip"
+        
+        zip_name = f"exported_files_{start}.zip"
         zip_path = os.path.join(frappe.get_site_path("private", "files"), zip_name)
         items = frappe.db.sql("""
                 SELECT name, image, back_image
@@ -447,10 +447,8 @@ def zip_and_upload():
                         
             with open(zip_path, "rb") as f:
                 files = {"file": (zip_name, f, "application/zip")}
-                
-                frappe.db.commit()
 
-                response = requests.post(f'{mtolori_main_url()}/product-images/upload-zip/', files=files, headers=get_headers(), timeout=6000)
+                response = requests.post('https://mtolori.com/api/product-images/upload-zip/', files=files, headers=get_headers(), timeout=60000)
                 if not response.ok:
                     print(f"Failed to upload zip: {response.text}")
                     frappe.log_error("Failed to log", f"Failed to upload zip: {response.text}")
