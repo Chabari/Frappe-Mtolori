@@ -420,7 +420,7 @@ def zip_and_upload():
                 FROM `tabItem`
                 WHERE disabled = 0 AND publish_item = 1
                 LIMIT {start}, {limit}
-            """, as_dict=1)
+            """.format(start=start, limit=chunk_size), as_dict=1)
 
         try:
             
