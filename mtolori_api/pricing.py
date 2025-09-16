@@ -396,7 +396,7 @@ def batch_customers():
                     pdt = {
                         "phone_number": cus.mobile_contact_no,
                         "price_list__erp_serial": price_list.price_list_id,
-                        "shop": 1
+                        "shop_id": 1
                     }
                     payload.append(pdt)
             if payload:
