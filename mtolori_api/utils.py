@@ -458,6 +458,6 @@ def zip_and_upload():
 
         finally:
             print("doeeeeeeeeeeeeeeeeeeeeeeeee")
-            # if os.path.exists(zip_path):
-            #     os.remove(zip_path)
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
         start += chunk_size
