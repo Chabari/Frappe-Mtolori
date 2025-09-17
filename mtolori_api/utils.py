@@ -403,7 +403,7 @@ def save_itm_image(items):
 
 @frappe.whitelist(allow_guest=True)  
 def save_images():
-    frappe.enqueue('mtolori_api.utils.zip_and_upload', queue='long', timeout=60*60*4)
+    frappe.enqueue('mtolori_api.utils.zip_and_upload', queue='long', timeout=60*60*5)
     return "Success"
 
 @frappe.whitelist(allow_guest=True) 
