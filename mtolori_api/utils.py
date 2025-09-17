@@ -394,7 +394,7 @@ def sync_images():
 
 @frappe.whitelist(allow_guest=True)
 def zip_and_upload():
-    chunk_size = 600
+    chunk_size = 200
     api_key = "derERscyms7B3tlrudh43mNT27D9AWi5jJfssR69JNIUP7Cuu2mWJHAd1Wxnioz7ErscY1OIKNA1Kg3gsadg5RaoxJgXIZmodKRA9Pkw6Za+/Xp063XunHGIN2+W0Q9zg3ycPSFi7CwhoPkVmxOK0xy9x7kpLla3nWb1q4qaoHWX146bwbaqLNvusryBT+3mQldW4rKUBjaekx7bYrSVMQ=="
 
     all_items = frappe.db.sql("""
@@ -453,3 +453,40 @@ def zip_and_upload():
             if os.path.exists(zip_path):
                 os.remove(zip_path)
                 print(f"Removed {zip_path}")
+    
+@frappe.whitelist(allow_guest=True)   
+def init_sync_warehouses():
+    items = frappe.db.sql("""
+        SELECT name, warehouse_name, phone_no
+        FROM `tabWarehouse`
+        WHERE disabled = 0 AND is_virtual_store = 1
+    """, as_dict=1)
+    frappe.enqueue('mtolori_api.utils.sync_warehouses', items=items, queue='long')
+    return "Success"
+    
+def sync_warehouses(items):
+    
+    try:
+        for doc in items:
+            
+            payload = {
+                "name" : doc.warehouse_name,
+                "organization" : 1,
+                "county" : 14,
+                "owner" : 2,
+                "phone_number" : doc.phone_no,
+                "lat" : 1,
+                "lng":2
+            } 
+            
+            res = get(f'/shops/{doc.name}/')
+            if not res:
+                res = post('/shops/', payload)
+            else:
+                res = patch(f'/shops/{doc.name}/', payload)
+                
+    except Exception as e:
+        print(str(e))
+        frappe.log_error(frappe.get_traceback(), str(e))
+         
+    

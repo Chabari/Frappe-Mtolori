@@ -184,6 +184,7 @@ scheduler_events = {
 		"mtolori_api.pricing.sync_customers",
 		"mtolori_api.pricing.sync_customer_group",
 		"mtolori_api.utils.sync_images",
+		"mtolori_api.utils.init_sync_warehouses",
 	],
 }
 
