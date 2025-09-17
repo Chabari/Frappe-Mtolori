@@ -406,30 +406,27 @@ def save_images():
     frappe.enqueue('mtolori_api.utils.zip_and_upload', queue='long', timeout=60*60*5)
     return "Success"
 
-@frappe.whitelist(allow_guest=True) 
+@frappe.whitelist(allow_guest=True)
 def zip_and_upload():
-    chunk_size = 20
-    start = 0
+    chunk_size = 50
 
-    while True:
-        # Safer query with placeholders
-        items = frappe.db.sql("""
-            SELECT name, image, back_image
-            FROM `tabItem`
-            WHERE disabled = 0 AND publish_item = 1
-            LIMIT %s OFFSET %s
-        """, (chunk_size, start), as_dict=1)
+    # Step 1: Fetch ALL items from the database in a single call
+    all_items = frappe.db.sql("""
+        SELECT name, image, back_image
+        FROM `tabItem`
+        WHERE disabled = 0 AND publish_item = 1
+    """, as_dict=1)
 
-        if not items:
-            print("No more items found, breaking loop.")
-            break
-
-        zip_name = f"exported_files_{start}.zip"
+    # Step 2: Process items in chunks
+    for i in range(0, len(all_items), chunk_size):
+        items_chunk = all_items[i:i + chunk_size]
+        start_index = i
+        zip_name = f"exported_files_{start_index}.zip"
         zip_path = os.path.join(frappe.get_site_path("private", "files"), zip_name)
 
         try:
             with zipfile.ZipFile(zip_path, "w") as zf:
-                for f in items:
+                for f in items_chunk:
                     # Handle front image
                     if f.image:
                         file_path = frappe.get_site_path("public", f.image.lstrip("/"))
@@ -459,21 +456,15 @@ def zip_and_upload():
                         "https://mtolori.com/api/product-images/upload-zip/",
                         files=files,
                         headers=headers,
-                        timeout=(30, 600),  # 30s connect, 10min read
+                        timeout=(30, 600),
                         stream=True
                     )
-                except requests.exceptions.RequestException as e:
-                    print(f"Request failed: {str(e)}")
-
-                if response.ok:
+                    response.raise_for_status()
                     print(f"✅ Uploaded {zip_name} successfully")
-                else:
-                    print(f"❌ Failed to upload {zip_name} -> {response.status_code}: {response.text}")
-
+                except requests.exceptions.RequestException as e:
+                    print(f"❌ Request failed for {zip_name}: {e}")
+                    # You may want to break here or continue to the next chunk
         finally:
-            # Cleanup
             if os.path.exists(zip_path):
                 os.remove(zip_path)
                 print(f"Removed {zip_path}")
-
-        start += chunk_size
