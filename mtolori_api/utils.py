@@ -394,7 +394,7 @@ def sync_images():
 
 @frappe.whitelist(allow_guest=True)
 def zip_and_upload():
-    chunk_size = 200
+    chunk_size = 300
     api_key = "derERscyms7B3tlrudh43mNT27D9AWi5jJfssR69JNIUP7Cuu2mWJHAd1Wxnioz7ErscY1OIKNA1Kg3gsadg5RaoxJgXIZmodKRA9Pkw6Za+/Xp063XunHGIN2+W0Q9zg3ycPSFi7CwhoPkVmxOK0xy9x7kpLla3nWb1q4qaoHWX146bwbaqLNvusryBT+3mQldW4rKUBjaekx7bYrSVMQ=="
 
     all_items = frappe.db.sql("""
@@ -443,8 +443,7 @@ def zip_and_upload():
                         "https://mtolori.com/api/product-images/upload-zip/",
                         files=files,
                         headers=headers,
-                        timeout=(30, 600),
-                        stream=True
+                        timeout=(30, 600)
                     )
                     print(f"✅ Uploaded {zip_name} successfully")
                 except requests.exceptions.RequestException as e:
