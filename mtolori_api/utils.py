@@ -446,8 +446,9 @@ def zip_and_upload():
                         timeout=(30, 600)
                     )
                     print(f"✅ Uploaded {zip_name} successfully")
-                except requests.exceptions.RequestException as e:
+                except Exception as e:
                     print(f"❌ Request failed for {zip_name}: {e}")
+                    frappe.log_error(frappe.get_traceback(), str(e))
         finally:
             if os.path.exists(zip_path):
                 os.remove(zip_path)
