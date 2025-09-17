@@ -409,6 +409,7 @@ def save_images():
 @frappe.whitelist(allow_guest=True)
 def zip_and_upload():
     chunk_size = 50
+    api_key = "derERscyms7B3tlrudh43mNT27D9AWi5jJfssR69JNIUP7Cuu2mWJHAd1Wxnioz7ErscY1OIKNA1Kg3gsadg5RaoxJgXIZmodKRA9Pkw6Za+/Xp063XunHGIN2+W0Q9zg3ycPSFi7CwhoPkVmxOK0xy9x7kpLla3nWb1q4qaoHWX146bwbaqLNvusryBT+3mQldW4rKUBjaekx7bYrSVMQ=="
 
     # Step 1: Fetch ALL items from the database in a single call
     all_items = frappe.db.sql("""
@@ -450,7 +451,7 @@ def zip_and_upload():
             # Upload to external API
             with open(zip_path, "rb") as f:
                 files = {"file": (zip_name, f, "application/zip")}
-                headers = {"Authorization": f"Token {mtolori_api_key()}"}
+                headers = {"Authorization": f"Token {api_key}"}
                 try:
                     response = requests.post(
                         "https://mtolori.com/api/product-images/upload-zip/",
@@ -459,7 +460,6 @@ def zip_and_upload():
                         timeout=(30, 600),
                         stream=True
                     )
-                    response.raise_for_status()
                     print(f"✅ Uploaded {zip_name} successfully")
                 except requests.exceptions.RequestException as e:
                     print(f"❌ Request failed for {zip_name}: {e}")
