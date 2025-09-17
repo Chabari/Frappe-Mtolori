@@ -243,20 +243,6 @@ def save_ids(items):
         frappe.log_error(frappe.get_traceback(), str(e))
         return str(e)
     
-@frappe.whitelist(allow_guest=True) 
-def sync_images():
-    try:
-        items = frappe.db.sql("""
-            SELECT name, image, back_image
-            FROM `tabItem`
-            WHERE disabled = 0 AND publish_item = 1
-        """, as_dict=1)
-        
-        frappe.enqueue('mtolori_api.utils.save_itm_image', queue='long', items=items, timeout=60*60*4)
-        return "Success"
-    except Exception as e:
-        print(str(e))
-        frappe.log_error(frappe.get_traceback(), str(e))
        
 @frappe.whitelist(allow_guest=True) 
 def get_item(name):
@@ -402,21 +388,22 @@ def save_itm_image(items):
     
 
 @frappe.whitelist(allow_guest=True)  
-def save_images():
+def sync_images():
     frappe.enqueue('mtolori_api.utils.zip_and_upload', queue='long', timeout=60*60*5)
     return "Success"
 
 @frappe.whitelist(allow_guest=True)
 def zip_and_upload():
-    chunk_size = 50
+    chunk_size = 600
     api_key = "derERscyms7B3tlrudh43mNT27D9AWi5jJfssR69JNIUP7Cuu2mWJHAd1Wxnioz7ErscY1OIKNA1Kg3gsadg5RaoxJgXIZmodKRA9Pkw6Za+/Xp063XunHGIN2+W0Q9zg3ycPSFi7CwhoPkVmxOK0xy9x7kpLla3nWb1q4qaoHWX146bwbaqLNvusryBT+3mQldW4rKUBjaekx7bYrSVMQ=="
 
-    # Step 1: Fetch ALL items from the database in a single call
     all_items = frappe.db.sql("""
         SELECT name, image, back_image
         FROM `tabItem`
         WHERE disabled = 0 AND publish_item = 1
     """, as_dict=1)
+    
+    frappe.db.close()
 
     # Step 2: Process items in chunks
     for i in range(0, len(all_items), chunk_size):
@@ -432,7 +419,7 @@ def zip_and_upload():
                     if f.image:
                         file_path = frappe.get_site_path("public", f.image.lstrip("/"))
                         if os.path.exists(file_path):
-                            _, ext = os.path.splitext(file_path)
+                            _, ext = os.path.splitext(f.image)
                             custom_name = f"{f.name}_front{ext}"
                             zf.write(file_path, arcname=custom_name)
                         else:
@@ -442,13 +429,12 @@ def zip_and_upload():
                     if f.back_image:
                         file_path = frappe.get_site_path("public", f.back_image.lstrip("/"))
                         if os.path.exists(file_path):
-                            _, ext = os.path.splitext(file_path)
+                            _, ext = os.path.splitext(f.back_image)
                             custom_name = f"{f.name}_back{ext}"
                             zf.write(file_path, arcname=custom_name)
                         else:
                             print(f"Back image not found: {file_path}")
 
-            # Upload to external API
             with open(zip_path, "rb") as f:
                 files = {"file": (zip_name, f, "application/zip")}
                 headers = {"Authorization": f"Token {api_key}"}
@@ -463,7 +449,6 @@ def zip_and_upload():
                     print(f"✅ Uploaded {zip_name} successfully")
                 except requests.exceptions.RequestException as e:
                     print(f"❌ Request failed for {zip_name}: {e}")
-                    # You may want to break here or continue to the next chunk
         finally:
             if os.path.exists(zip_path):
                 os.remove(zip_path)
