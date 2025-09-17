@@ -408,7 +408,7 @@ def save_images():
 
 @frappe.whitelist(allow_guest=True) 
 def zip_and_upload():
-    chunk_size = 50
+    chunk_size = 20
     start = 0
 
     while True:
@@ -463,16 +463,12 @@ def zip_and_upload():
                         stream=True
                     )
                 except requests.exceptions.RequestException as e:
-                    frappe.log_error(f"Request failed: {str(e)}", "Upload Error")
                     print(f"Request failed: {str(e)}")
-                    break  # stop loop if API is unreachable
 
                 if response.ok:
                     print(f"✅ Uploaded {zip_name} successfully")
                 else:
-                    frappe.log_error(f"Status: {response.status_code}, Body: {response.text}", "Upload Error")
                     print(f"❌ Failed to upload {zip_name} -> {response.status_code}: {response.text}")
-                    break  # stop loop if API rejects request
 
         finally:
             # Cleanup
