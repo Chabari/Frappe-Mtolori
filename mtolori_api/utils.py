@@ -443,7 +443,7 @@ def zip_and_upload():
                         "https://mtolori.com/api/product-images/upload-zip/",
                         files=files,
                         headers=headers,
-                        timeout=(30, 600),
+                        timeout=(30, 3600),
                         stream=True
                     )
                     print(f"✅ Uploaded {zip_name} successfully")
