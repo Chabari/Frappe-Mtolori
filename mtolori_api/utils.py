@@ -443,7 +443,7 @@ def zip_and_upload():
                         "https://mtolori.com/api/product-images/upload-zip/",
                         files=files,
                         headers=headers,
-                        timeout=(30, 3600),
+                        timeout=(30, 1800),
                         stream=True
                     )
                     print(f"✅ Uploaded {zip_name} successfully")
@@ -480,9 +480,13 @@ def sync_warehouses(items):
                 "name" : doc.name,
                 "organization" : 1,
                 "county" : 14,
-                "owner" : 6,
+                "owner_email" : "mtolori353@gmail.com"
             } 
             res = post('/shops/', payload)
+            if res:
+                shop_id = res['id']
+                query = f"""UPDATE `tabWarehouse` SET shop_id='{shop_id}' WHERE name='{doc.name}' """
+                frappe.db.sql(query)
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
