@@ -129,6 +129,10 @@ doc_events = {
         "on_update": "mtolori_api.utils.before_save_item",
         "after_insert": "mtolori_api.utils.before_save_item"
     },
+    "Warehouse": {
+        "on_update": "mtolori_api.utils.before_save_warehouse",
+        "after_insert": "mtolori_api.utils.before_save_warehouse"
+    },
 }
 
 

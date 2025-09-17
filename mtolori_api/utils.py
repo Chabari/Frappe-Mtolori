@@ -456,37 +456,33 @@ def zip_and_upload():
                 os.remove(zip_path)
                 print(f"Removed {zip_path}")
     
+def before_save_warehouse(doc, method):
+    if doc.is_virtual_store == 1 and doc.is_group == 0 and doc.disabled == 0:
+        items = [doc]
+        frappe.enqueue('mtolori_api.utils.sync_warehouses', items=items, queue='long')
+        return "Success"    
+    
 @frappe.whitelist(allow_guest=True)   
 def init_sync_warehouses():
     items = frappe.db.sql("""
         SELECT name, warehouse_name, phone_no
         FROM `tabWarehouse`
-        WHERE disabled = 0 AND is_virtual_store = 1
+        WHERE disabled = 0 AND is_virtual_store = 1 AND is_group=0
     """, as_dict=1)
     frappe.enqueue('mtolori_api.utils.sync_warehouses', items=items, queue='long')
     return "Success"
     
 def sync_warehouses(items):
-    
     try:
         for doc in items:
             
             payload = {
-                "name" : doc.warehouse_name,
+                "name" : doc.name,
                 "organization" : 1,
                 "county" : 14,
-                "owner" : 2,
-                "phone_number" : doc.phone_no,
-                "lat" : 1,
-                "lng":2
+                "owner" : 6,
             } 
-            
-            res = get(f'/shops/{doc.name}/')
-            if not res:
-                res = post('/shops/', payload)
-            else:
-                res = patch(f'/shops/{doc.name}/', payload)
-                
+            res = post('/shops/', payload)
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
