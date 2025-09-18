@@ -479,7 +479,7 @@ def zip_and_upload():
                             timeout=(30, 1200)  # (connect, read)
                         )
 
-                    if response.status_code == 200:
+                    if response.status_code in [200, 201, 202]:
                         print(f"✅ Uploaded {zip_name} successfully")
                         success = True
                         break
