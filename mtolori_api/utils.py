@@ -416,7 +416,7 @@ def sync_images():
 
 @frappe.whitelist(allow_guest=True)
 def zip_and_upload():
-    chunk_size = 300
+    chunk_size = 100
     api_key = "derERscyms7B3tlrudh43mNT27D9AWi5jJfssR69JNIUP7Cuu2mWJHAd1Wxnioz7ErscY1OIKNA1Kg3gsadg5RaoxJgXIZmodKRA9Pkw6Za+/Xp063XunHGIN2+W0Q9zg3ycPSFi7CwhoPkVmxOK0xy9x7kpLla3nWb1q4qaoHWX146bwbaqLNvusryBT+3mQldW4rKUBjaekx7bYrSVMQ=="
     upload_url = "https://mtolori.com/api/product-images/upload-zip/"
 
@@ -428,7 +428,6 @@ def zip_and_upload():
 
     frappe.db.close()
 
-    # Step 2: Process items in chunks
     for i in range(0, len(all_items), chunk_size):
         items_chunk = all_items[i:i + chunk_size]
         start_index = i
@@ -436,7 +435,7 @@ def zip_and_upload():
         zip_path = os.path.join(frappe.get_site_path("private", "files"), zip_name)
 
         try:
-            # Create zip
+            # Create zip for this batch
             with zipfile.ZipFile(zip_path, "w") as zf:
                 for f in items_chunk:
                     # Handle front image
@@ -459,9 +458,8 @@ def zip_and_upload():
                         else:
                             print(f"[WARN] Back image not found: {file_path}")
 
-            # Upload zip with retry
-            success = False
-            for attempt in range(1, 4):  # max 3 retries
+            # Try uploading with retries
+            for attempt in range(1, 4):
                 try:
                     with open(zip_path, "rb") as f:
                         encoder = MultipartEncoder(fields={"file": (zip_name, f, "application/zip")})
@@ -476,15 +474,14 @@ def zip_and_upload():
                             upload_url,
                             data=encoder,
                             headers=headers,
-                            timeout=(30, 1200)  # (connect, read)
+                            timeout=(30, 1200)
                         )
 
-                    if response.status_code in [200, 201, 202]:
+                    if response.status_code in (200, 201, 202):
                         print(f"✅ Uploaded {zip_name} successfully")
-                        success = True
-                        break
+                        break  # <-- go to next chunk
                     else:
-                        print(f"❌ Upload failed (status {response.status_code}): {response.text}")
+                        print(f"❌ Upload failed for {zip_name} (status {response.status_code}): {response.text}")
 
                 except requests.exceptions.Timeout:
                     print(f"[WARN] Timeout on attempt {attempt} for {zip_name}")
@@ -494,20 +491,19 @@ def zip_and_upload():
                     print(f"[ERROR] Unexpected error on attempt {attempt}: {e}")
                     frappe.log_error(frappe.get_traceback(), str(e))
 
-                # Backoff before retry
                 if attempt < 3:
                     wait = attempt * 5
                     print(f"[INFO] Retrying {zip_name} in {wait}s...")
                     time.sleep(wait)
-
-            if not success:
+            else:
                 print(f"[FAIL] Giving up on {zip_name} after retries")
 
         finally:
             if os.path.exists(zip_path):
                 os.remove(zip_path)
                 print(f"[INFO] Removed {zip_path}")
-
+                
+                
 @frappe.whitelist(allow_guest=True)
 def zip_and_uploads():
     chunk_size = 100
