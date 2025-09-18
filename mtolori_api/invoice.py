@@ -6,112 +6,110 @@ import traceback
 
 @frappe.whitelist(allow_guest=True)  
 def create(**args):
-    return
     try:
         sales_invoice_doc = frappe.db.get_value('Sales Invoice', {'order_id': str(args.get('order_id'))}, ['name'], as_dict=1) 
         if not sales_invoice_doc:
-            sales_invoice_doc = frappe.new_doc('Sales Invoice')
             
             warehouse_name = frappe.db.get_value('Warehouse', {'shop_id': args.get('shop_id')}, ['name'], as_dict=1) 
             if warehouse_name:
             
                 profile_name = frappe.db.get_value('POS Profile', {'warehouse': warehouse_name.name}, ['name'], as_dict=1) 
+                sales_invoice_doc = frappe.new_doc('Sales Invoice')
+                company = get_main_company()
+                customer = '100342-M-TOLORI RETAIL ONLINE'
+                sales_invoice_doc.discount_amount = 0
+                sales_invoice_doc.customer = customer
+                sales_invoice_doc.due_date = frappe.utils.data.today()
+                sales_invoice_doc.debit_to = company.default_receivable_account
+                sales_invoice_doc.set_warehouse = warehouse_name.name
+                sales_invoice_doc.order_type = "Mtolori"
+                sales_invoice_doc.order_number = args.get('number')
+                sales_invoice_doc.delivery_method = args.get('delivery_method')
+                sales_invoice_doc.order_id = str(args.get('order_id'))
                 if profile_name:
-                    profile = frappe.get_doc('POS Profile', profile_name.name)
-                    company = get_main_company()
-                    customer = '100342-M-TOLORI RETAIL ONLINE'
-                    sales_invoice_doc.discount_amount = 0
-                    sales_invoice_doc.customer = customer
-                    sales_invoice_doc.due_date = frappe.utils.data.today()
-                    sales_invoice_doc.debit_to = company.default_receivable_account
-                    sales_invoice_doc.set_warehouse = warehouse_name.name
-                    sales_invoice_doc.order_type = "Mtolori"
-                    sales_invoice_doc.order_number = args.get('number')
-                    sales_invoice_doc.delivery_method = args.get('delivery_method')
-                    sales_invoice_doc.order_id = str(args.get('order_id'))
-                    sales_invoice_doc.pos_profile = profile.name
-                    total_amount = 0
+                    sales_invoice_doc.pos_profile = profile_name.name
+                total_amount = 0
+                
+                for itm in args.get('items'):
+                    item = frappe.get_doc("Item", itm.get('erp_serial'))
+                    default_income_account = None
+                    for item_default in item.item_defaults:
+                        if item_default.company == company.name:
+                            if item_default.income_account:
+                                default_income_account = item_default.income_account
+                            else:
+                                default_income_account = company.default_income_account
+                                
+                    sales_invoice_doc.append('items',{
+                        'item_code': item.item_code,
+                        'item_name': item.item_name,
+                        'description': item.description,
+                        'qty': itm.get('quantity'),
+                        'uom': item.stock_uom,
+                        'rate': itm.get('price'),
+                        'amount': itm.get('amount'),
+                        'income_account': default_income_account
+                    })
+                    total_amount += float(itm.get('amount'))
                     
-                    for itm in args.get('items'):
-                        item = frappe.get_doc("Item", itm.get('erp_serial'))
-                        default_income_account = None
-                        for item_default in item.item_defaults:
-                            if item_default.company == company.name:
-                                if item_default.income_account:
-                                    default_income_account = item_default.income_account
-                                else:
-                                    default_income_account = company.default_income_account
-                                    
-                        sales_invoice_doc.append('items',{
-                            'item_code': item.item_code,
-                            'item_name': item.item_name,
-                            'description': item.description,
-                            'qty': itm.get('quantity'),
-                            'uom': item.stock_uom,
-                            'rate': itm.get('price'),
-                            'amount': itm.get('amount'),
-                            'income_account': default_income_account
-                        })
-                        total_amount += float(itm.get('amount'))
-                        
-                    if total_amount > 0:
-                        sales_invoice_doc.is_pos = 0
-                        sales_invoice_doc.update_stock = 1
-                        sales_invoice_doc.paid_amount = total_amount
-                        
-                        payments = []
-                        
-                        payments.append(frappe._dict({
-                            'mode_of_payment': "Cash",
-                            'amount': total_amount,
-                            'type': "Cash",
-                            'default': 1
-                        }))
-                        sales_invoice_doc.set("payments", payments)
+                if total_amount > 0:
+                    sales_invoice_doc.is_pos = 0
+                    sales_invoice_doc.update_stock = 1
+                    sales_invoice_doc.paid_amount = total_amount
+                    
+                    payments = []
+                    
+                    payments.append(frappe._dict({
+                        'mode_of_payment': "Cash",
+                        'amount': total_amount,
+                        'type': "Cash",
+                        'default': 1
+                    }))
+                    sales_invoice_doc.set("payments", payments)
 
-                        sales_invoice_doc.flags.ignore_permissions = True
-                        sales_invoice_doc.set_missing_values()
-                        frappe.flags.ignore_account_permission = True
-                        sales_invoice_doc.save(ignore_permissions = True)
-                        
-                        sales_invoice_doc.submit()
-                        frappe.db.commit() 
-                        
-                        
-                        # payment_entry = frappe.get_doc({
-                        #     "doctype": "Payment Entry",
-                        #     "payment_type": "Receive",
-                        #     "party_type": "Customer",
-                        #     "party": customer,
-                        #     "paid_amount": total_amount,
-                        #     "base_paid_amount": total_amount,
-                        #     "target_exchange_rate": 1,
-                        #     "received_amount": total_amount,
-                        #     "base_received_amount": total_amount,
-                        #     "paid_to": "Cash - G",
-                        #     "paid_from": "Debtors - G",
-                        #     "paid_to_account_currency": "KES",
-                        #     "paid_from_account_currency": "KES",
-                        #     "source_exchange_rate": 1,
-                        #     "reference_no": sales_invoice_doc.name,
-                        #     "reference_date": frappe.utils.nowdate(),
-                        #     "references": [{
-                        #         "reference_doctype": "Sales Invoice",
-                        #         "reference_name": sales_invoice_doc.name,
-                        #         "total_amount": total_amount,
-                        #         "outstanding_amount": total_amount,
-                        #         "allocated_amount": total_amount
-                        #     }]
-                        # })
-                        
-                        # payment_entry.flags.ignore_permissions = True
-                        # # payment_entry.flags.ignore_mandatory = True
-                        # payment_entry.flags.ignore_validate = True
+                    sales_invoice_doc.flags.ignore_permissions = True
+                    sales_invoice_doc.set_missing_values()
+                    frappe.flags.ignore_account_permission = True
+                    sales_invoice_doc.save(ignore_permissions = True)
+                    
+                    sales_invoice_doc.submit()
+                    frappe.db.commit() 
+                    
+                    
+                    # payment_entry = frappe.get_doc({
+                    #     "doctype": "Payment Entry",
+                    #     "payment_type": "Receive",
+                    #     "party_type": "Customer",
+                    #     "party": customer,
+                    #     "paid_amount": total_amount,
+                    #     "base_paid_amount": total_amount,
+                    #     "target_exchange_rate": 1,
+                    #     "received_amount": total_amount,
+                    #     "base_received_amount": total_amount,
+                    #     "paid_to": "Cash - G",
+                    #     "paid_from": "Debtors - G",
+                    #     "paid_to_account_currency": "KES",
+                    #     "paid_from_account_currency": "KES",
+                    #     "source_exchange_rate": 1,
+                    #     "reference_no": sales_invoice_doc.name,
+                    #     "reference_date": frappe.utils.nowdate(),
+                    #     "references": [{
+                    #         "reference_doctype": "Sales Invoice",
+                    #         "reference_name": sales_invoice_doc.name,
+                    #         "total_amount": total_amount,
+                    #         "outstanding_amount": total_amount,
+                    #         "allocated_amount": total_amount
+                    #     }]
+                    # })
+                    
+                    # payment_entry.flags.ignore_permissions = True
+                    # # payment_entry.flags.ignore_mandatory = True
+                    # payment_entry.flags.ignore_validate = True
 
-                        # payment_entry.insert(ignore_permissions=True)
-                        # payment_entry.submit()
+                    # payment_entry.insert(ignore_permissions=True)
+                    # payment_entry.submit()
 
-                        frappe.response.message = "Success. Order created"
+                    frappe.response.message = "Success. Order created"
             else:
                 frappe.response.message = "Failed. Shop does not exist"
         else:

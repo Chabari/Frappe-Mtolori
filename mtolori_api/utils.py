@@ -156,14 +156,9 @@ def before_save_item(doc, method):
 def save_itm(items):
     try:
         for itm in items:
-            doc = frappe.get_doc('Item', itm)    
-            inventory = []
-            inventory.append({
-                "shop_id": 1,
-                "quantity": 5,
-                "buying_price": get_buy_price(doc.item_code),
-                
-            })
+            doc = frappe.get_doc('Item', itm)  
+            
+            inventory = get_stock_balance(doc)
             subcategory = 1
             if doc.sub_category:
                 subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
@@ -283,6 +278,36 @@ def sync_items():
     frappe.enqueue('mtolori_api.utils.batch_item', queue='long', timeout=60*60*4)
     return "Success"
 
+def get_stock_availability(item_code, warehouse):
+    actual_qty = (
+        frappe.db.get_value(
+            "Stock Ledger Entry",
+            filters={
+                "item_code": item_code,
+                "warehouse": warehouse,
+                "is_cancelled": 0,
+            },
+            fieldname="qty_after_transaction",
+            order_by="posting_date desc, posting_time desc, creation desc",
+        )
+        or 0.0
+    )
+    return actual_qty
+
+def get_stock_balance(doc):
+    items = virtual_warehouses()
+    inventory = []
+    for dc in items:
+        if dc.shop_id:
+            qty = get_stock_availability(doc.item_code, dc.name)
+            inventory.append({
+                "shop_id": dc.shop_id,
+                "quantity": qty,
+                "buying_price": get_buy_price(doc.item_code),
+                
+            })
+    return inventory
+
 @frappe.whitelist(allow_guest=True)  
 def batch_item():
     try:
@@ -301,13 +326,8 @@ def batch_item():
             
             for x in items:
                 doc = frappe.get_doc('Item', x.name)    
-                inventory = []
-                inventory.append({
-                    "shop_id": 1,
-                    "quantity": 5,
-                    "buying_price": get_buy_price(doc.item_code),
-                    
-                })
+                inventory = get_stock_balance(doc)
+                
                 subcategory = 1
                 if doc.sub_category:
                     subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
@@ -463,13 +483,10 @@ def before_save_warehouse(doc, method):
         frappe.enqueue('mtolori_api.utils.sync_warehouses', items=items, queue='long')
         return "Success"    
     
+
 @frappe.whitelist(allow_guest=True)   
 def init_sync_warehouses():
-    items = frappe.db.sql("""
-        SELECT name, warehouse_name, phone_no
-        FROM `tabWarehouse`
-        WHERE disabled = 0 AND is_virtual_store = 1 AND is_group=0
-    """, as_dict=1)
+    items = virtual_warehouses()
     frappe.enqueue('mtolori_api.utils.sync_warehouses', items=items, queue='long')
     return "Success"
     
@@ -493,3 +510,10 @@ def sync_warehouses(items):
         frappe.log_error(frappe.get_traceback(), str(e))
          
     
+def virtual_warehouses():
+    items = frappe.db.sql("""
+        SELECT name, warehouse_name, phone_no, shop_id
+        FROM `tabWarehouse`
+        WHERE disabled = 0 AND is_virtual_store = 1 AND is_group=0
+    """, as_dict=1)
+    return items
