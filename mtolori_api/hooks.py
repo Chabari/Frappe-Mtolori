@@ -133,6 +133,9 @@ doc_events = {
         "on_update": "mtolori_api.utils.before_save_warehouse",
         "after_insert": "mtolori_api.utils.before_save_warehouse"
     },
+    "Stock Ledger Entry": {
+        "on_update": "mtolori_api.utils.update_stock_ledger",
+    },
 }
 
 

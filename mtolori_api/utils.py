@@ -150,7 +150,8 @@ def sync_the_items(**args):
         
 def before_save_item(doc, method):
     try:
-        save_itm([doc.name])
+        items = [doc.name]
+        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
@@ -295,6 +296,11 @@ def get_stock_availability(item_code, warehouse):
         or 0.0
     )
     return actual_qty
+
+
+def update_stock_ledger(doc, method):
+    items = [doc.item_code]
+    frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
 
 def get_stock_balance(doc):
     items = virtual_warehouses()
