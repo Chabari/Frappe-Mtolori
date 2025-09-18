@@ -424,6 +424,7 @@ def zip_and_upload():
         SELECT name, image, back_image
         FROM `tabItem`
         WHERE disabled = 0 AND publish_item = 1
+        ORDER BY name DESC
     """, as_dict=1)
 
     frappe.db.close()
