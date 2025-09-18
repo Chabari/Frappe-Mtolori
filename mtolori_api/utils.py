@@ -4,6 +4,8 @@ from erpnext import get_default_company
 from datetime import datetime
 import os
 from requests.auth import HTTPBasicAuth
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import time
 
 import zipfile
 from frappe.utils.file_manager import get_file_path
@@ -414,6 +416,100 @@ def sync_images():
 
 @frappe.whitelist(allow_guest=True)
 def zip_and_upload():
+    chunk_size = 200
+    api_key = "derERscyms7B3tlrudh43mNT27D9AWi5jJfssR69JNIUP7Cuu2mWJHAd1Wxnioz7ErscY1OIKNA1Kg3gsadg5RaoxJgXIZmodKRA9Pkw6Za+/Xp063XunHGIN2+W0Q9zg3ycPSFi7CwhoPkVmxOK0xy9x7kpLla3nWb1q4qaoHWX146bwbaqLNvusryBT+3mQldW4rKUBjaekx7bYrSVMQ=="
+    upload_url = "https://mtolori.com/api/product-images/upload-zip/"
+
+    all_items = frappe.db.sql("""
+        SELECT name, image, back_image
+        FROM `tabItem`
+        WHERE disabled = 0 AND publish_item = 1
+    """, as_dict=1)
+
+    frappe.db.close()
+
+    # Step 2: Process items in chunks
+    for i in range(0, len(all_items), chunk_size):
+        items_chunk = all_items[i:i + chunk_size]
+        start_index = i
+        zip_name = f"exported_files_{start_index}.zip"
+        zip_path = os.path.join(frappe.get_site_path("private", "files"), zip_name)
+
+        try:
+            # Create zip
+            with zipfile.ZipFile(zip_path, "w") as zf:
+                for f in items_chunk:
+                    # Handle front image
+                    if f.image:
+                        file_path = frappe.get_site_path("public", f.image.lstrip("/"))
+                        if os.path.exists(file_path):
+                            _, ext = os.path.splitext(f.image)
+                            custom_name = f"{f.name}_front{ext}"
+                            zf.write(file_path, arcname=custom_name)
+                        else:
+                            print(f"[WARN] Front image not found: {file_path}")
+
+                    # Handle back image
+                    if f.back_image:
+                        file_path = frappe.get_site_path("public", f.back_image.lstrip("/"))
+                        if os.path.exists(file_path):
+                            _, ext = os.path.splitext(f.back_image)
+                            custom_name = f"{f.name}_back{ext}"
+                            zf.write(file_path, arcname=custom_name)
+                        else:
+                            print(f"[WARN] Back image not found: {file_path}")
+
+            # Upload zip with retry
+            success = False
+            for attempt in range(1, 4):  # max 3 retries
+                try:
+                    with open(zip_path, "rb") as f:
+                        encoder = MultipartEncoder(fields={"file": (zip_name, f, "application/zip")})
+
+                        headers = {
+                            "Authorization": f"Token {api_key}",
+                            "Content-Type": encoder.content_type,
+                            "Connection": "close"
+                        }
+
+                        response = requests.post(
+                            upload_url,
+                            data=encoder,
+                            headers=headers,
+                            timeout=(30, 1200)  # (connect, read)
+                        )
+
+                    if response.status_code == 200:
+                        print(f"✅ Uploaded {zip_name} successfully")
+                        success = True
+                        break
+                    else:
+                        print(f"❌ Upload failed (status {response.status_code}): {response.text}")
+
+                except requests.exceptions.Timeout:
+                    print(f"[WARN] Timeout on attempt {attempt} for {zip_name}")
+                except requests.exceptions.ConnectionError as e:
+                    print(f"[WARN] Connection error on attempt {attempt}: {e}")
+                except Exception as e:
+                    print(f"[ERROR] Unexpected error on attempt {attempt}: {e}")
+                    frappe.log_error(frappe.get_traceback(), str(e))
+
+                # Backoff before retry
+                if attempt < 3:
+                    wait = attempt * 5
+                    print(f"[INFO] Retrying {zip_name} in {wait}s...")
+                    time.sleep(wait)
+
+            if not success:
+                print(f"[FAIL] Giving up on {zip_name} after retries")
+
+        finally:
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+                print(f"[INFO] Removed {zip_path}")
+
+@frappe.whitelist(allow_guest=True)
+def zip_and_uploads():
     chunk_size = 100
     api_key = "derERscyms7B3tlrudh43mNT27D9AWi5jJfssR69JNIUP7Cuu2mWJHAd1Wxnioz7ErscY1OIKNA1Kg3gsadg5RaoxJgXIZmodKRA9Pkw6Za+/Xp063XunHGIN2+W0Q9zg3ycPSFi7CwhoPkVmxOK0xy9x7kpLla3nWb1q4qaoHWX146bwbaqLNvusryBT+3mQldW4rKUBjaekx7bYrSVMQ=="
 
@@ -472,10 +568,9 @@ def zip_and_upload():
                     print(f"❌ Request failed for {zip_name}: {e}")
                     frappe.log_error(frappe.get_traceback(), str(e))
         finally:
-            print("yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-            # if os.path.exists(zip_path):
-            #     os.remove(zip_path)
-            #     print(f"Removed {zip_path}")
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+                print(f"Removed {zip_path}")
     
 def before_save_warehouse(doc, method):
     if doc.is_virtual_store == 1 and doc.is_group == 0 and doc.disabled == 0:
@@ -483,7 +578,6 @@ def before_save_warehouse(doc, method):
         frappe.enqueue('mtolori_api.utils.sync_warehouses', items=items, queue='long')
         return "Success"    
     
-
 @frappe.whitelist(allow_guest=True)   
 def init_sync_warehouses():
     items = virtual_warehouses()
@@ -509,7 +603,6 @@ def sync_warehouses(items):
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
          
-    
 def virtual_warehouses():
     items = frappe.db.sql("""
         SELECT name, warehouse_name, phone_no, shop_id
