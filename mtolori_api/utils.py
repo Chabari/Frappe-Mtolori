@@ -452,9 +452,10 @@ def zip_and_upload():
                     print(f"❌ Request failed for {zip_name}: {e}")
                     frappe.log_error(frappe.get_traceback(), str(e))
         finally:
-            if os.path.exists(zip_path):
-                os.remove(zip_path)
-                print(f"Removed {zip_path}")
+            print("yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+            # if os.path.exists(zip_path):
+            #     os.remove(zip_path)
+            #     print(f"Removed {zip_path}")
     
 def before_save_warehouse(doc, method):
     if doc.is_virtual_store == 1 and doc.is_group == 0 and doc.disabled == 0:
