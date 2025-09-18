@@ -482,7 +482,7 @@ def zip_and_upload():
                         print(f"✅ Uploaded {zip_name} successfully")
                         break  # <-- go to next chunk
                     else:
-                        print(f"❌ Upload failed for {zip_name} (status {response.status_code}): {response.text}")
+                        print(f"❌ Upload failed for")
 
                 except requests.exceptions.Timeout:
                     print(f"[WARN] Timeout on attempt {attempt} for {zip_name}")
