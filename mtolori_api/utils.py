@@ -416,7 +416,7 @@ def sync_images():
 
 @frappe.whitelist(allow_guest=True)
 def zip_and_upload():
-    chunk_size = 200
+    chunk_size = 300
     api_key = "derERscyms7B3tlrudh43mNT27D9AWi5jJfssR69JNIUP7Cuu2mWJHAd1Wxnioz7ErscY1OIKNA1Kg3gsadg5RaoxJgXIZmodKRA9Pkw6Za+/Xp063XunHGIN2+W0Q9zg3ycPSFi7CwhoPkVmxOK0xy9x7kpLla3nWb1q4qaoHWX146bwbaqLNvusryBT+3mQldW4rKUBjaekx7bYrSVMQ=="
     upload_url = "https://mtolori.com/api/product-images/upload-zip/"
 
