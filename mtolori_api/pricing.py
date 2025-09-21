@@ -260,7 +260,6 @@ def save_customers(customers):
 def sync_customers():
     frappe.enqueue('mtolori_api.pricing.batch_customers', queue='long')
     return "Success"
-
  
 def save_customer_group(groups):
     try:

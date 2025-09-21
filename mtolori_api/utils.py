@@ -188,59 +188,6 @@ def save_itm(items):
     except Exception as e:
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
-         
-@frappe.whitelist(allow_guest=True)        
-def save_ids(items):
-    reses = []
-    try:
-        for itm in items:
-            doc = frappe.get_doc('Item', itm)    
-            inventory = []
-            item_data = get_data(doc.item_code)
-            for dt in item_data:
-                shop = frappe.get_doc("Warehouse", dt.warehouse)
-                inventory.append({
-                    "shop_id": shop.shop_id,
-                    "quantity": dt.actual_qty,
-                    "buying_price": get_buy_price(doc.item_code)
-                })
-            subcategory = 1
-            if doc.sub_category:
-                subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
-                
-            payload = {
-                "erp_serial": doc.item_code,
-                "organization_id" : 1,
-                "name": doc.item_name,
-                "description": doc.the_extended_description if doc.the_extended_description else doc.description,
-                "weight": doc.weight_grams,
-                "sku": doc.item_code,
-                "subcategory_id": subcategory,
-                "is_active": True,
-                "inventory": inventory
-            }
-            res = get(f'/products/{doc.item_code}/')
-            reses.append({
-                "get": res
-            })
-            if not res:
-                if doc.publish_item == 1:
-                    res = post('/products/', payload)
-                    reses.append({
-                        "post": res
-                    })
-            else:
-                res = patch(f'/products/{doc.item_code}/', payload)
-                reses.append({
-                    "patch": res
-                })
-            
-        return reses
-    except Exception as e:
-        print(str(e))
-        frappe.log_error(frappe.get_traceback(), str(e))
-        return str(e)
-    
        
 @frappe.whitelist(allow_guest=True) 
 def get_item(name):
