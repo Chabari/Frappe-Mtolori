@@ -1,4 +1,4 @@
-import frappe
+
 import requests
 from erpnext import get_default_company
 from datetime import datetime
@@ -11,7 +11,7 @@ import zipfile
 from frappe.utils.file_manager import get_file_path
 
 from frappe.utils import cint, flt
-import qrcode
+from mtolori_api.helper import *
 
 @frappe.whitelist(allow_guest=True)  
 def get_data(
@@ -228,21 +228,6 @@ def sync_items():
     frappe.enqueue('mtolori_api.utils.batch_item', queue='long', timeout=60*60*4)
     return "Success"
 
-def get_stock_availability(item_code, warehouse):
-    actual_qty = (
-        frappe.db.get_value(
-            "Stock Ledger Entry",
-            filters={
-                "item_code": item_code,
-                "warehouse": warehouse,
-                "is_cancelled": 0,
-            },
-            fieldname="qty_after_transaction",
-            order_by="posting_date desc, posting_time desc, creation desc",
-        )
-        or 0.0
-    )
-    return actual_qty
 
 
 def update_stock_ledger(doc, method):
@@ -553,10 +538,3 @@ def sync_warehouses(items):
         print(str(e))
         frappe.log_error(frappe.get_traceback(), str(e))
          
-def virtual_warehouses():
-    items = frappe.db.sql("""
-        SELECT name, warehouse_name, phone_no, shop_id
-        FROM `tabWarehouse`
-        WHERE disabled = 0 AND is_virtual_store = 1 AND is_group=0
-    """, as_dict=1)
-    return items
