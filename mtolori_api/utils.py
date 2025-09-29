@@ -132,10 +132,33 @@ def sync_the_items(**args):
         xitems = frappe.db.sql("""
             SELECT name
             FROM `tabItem`
+            WHERE publish_item = 1 AND disabled = 0
             LIMIT %(page_length)s OFFSET %(start)s 
         """, {"page_length": page_length, "start": start}, as_dict=1)
-        items = [itm.name for itm in xitems]
-        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items, timeout=60*60*1)
+        payload_data = []
+        for itm in xitems:
+            doc = frappe.get_doc('Item', itm)  
+            
+            inventory = get_stock_balance(doc)
+            subcategory = 1
+            if doc.sub_category:
+                subcategory = frappe.get_value("Item Category", doc.sub_category, "id")
+                
+            payload = {
+                "erp_serial": doc.item_code,
+                "organization_id" : 1,
+                "name": doc.item_name,
+                "description": doc.the_extended_description if doc.the_extended_description else doc.description,
+                "weight": doc.weight_grams,
+                "sku": doc.item_code,
+                "subcategory_id": subcategory,
+                "is_active": True if doc.publish_item == 1 else False,
+                "inventory": inventory
+            }   
+            payload_data.append(payload)
+        # items = [itm.name for itm in xitems]
+        # frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items, timeout=60*60*1)
+        frappe.response.payload_data = payload_data
         frappe.response.pagination = {
             "start": start,
             "page_length": page_length,
