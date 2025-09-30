@@ -3,10 +3,21 @@ from mtolori_api.utils import *
 from frappe.utils import flt
 from frappe.utils import flt, cint, getdate, get_datetime, nowdate, nowtime, add_days, unique, month_diff
 import traceback
+import json
 
 @frappe.whitelist(allow_guest=True)  
 def create(**args):
     try:
+        headers = frappe.local.request.headers
+        api_key = headers.get("api_key")
+
+        if not api_key:
+            frappe.throw(("Missing API Key"), frappe.PermissionError)
+        
+        if api_key != "87454e2bac913cebefb9ac88826cf9":
+            frappe.throw(("Failed. The API Key is invalid."), frappe.PermissionError)
+            
+            
         sales_invoice_doc = frappe.db.get_value('Sales Invoice', {'order_id': str(args.get('order_id'))}, ['name'], as_dict=1) 
         if not sales_invoice_doc:
             
@@ -60,7 +71,7 @@ def create(**args):
                     payments = []
                     
                     payments.append(frappe._dict({
-                        'mode_of_payment': "Cash",
+                        'mode_of_payment': "M-Tolori Online Till",
                         'amount': total_amount,
                     }))
                     sales_invoice_doc.set("payments", payments)
@@ -71,8 +82,11 @@ def create(**args):
                     frappe.flags.ignore_account_permission = True
                     sales_invoice_doc.save(ignore_permissions = True)
                     
+                    sign_invoice(sales_invoice_doc)
+                    
                     sales_invoice_doc.submit()
                     frappe.db.commit() 
+                    
 
                     frappe.response.success = True
                     frappe.response.message = "Success. Order created"
@@ -88,6 +102,96 @@ def create(**args):
    
     except Exception as e:
         log_error(e)
+        
+        
+def sign_invoice(invoice):
+    theitems = []
+    for itm in invoice.items:
+        doctm = frappe.get_doc('Item', itm.item_code)
+        item_group = frappe.get_doc('Item Group', doctm.item_group)
+        
+        if itm.qty < 1:
+            myitm = " Agri 1.0 " +str(abs(itm.amount)) + " " + str(abs(itm.amount))
+        else:
+            myitm = " Agri "+str(itm.qty) +" " +str(abs(itm.rate)) + " " + str(abs(itm.amount))
+        
+        if item_group.hs_code:
+            if itm.qty < 1:
+                myitm = item_group.hs_code+ " Agri 1.0 " + str(abs(itm.amount)) + " " + str(abs(itm.amount))
+            else:
+                myitm = item_group.hs_code+ " Agri "+str(itm.qty) +" " + str(abs(itm.rate)) + " " + str(abs(itm.amount))
+                
+            
+        theitems.append(myitm)
+            
+    tax_id = ""
+    customer = frappe.get_doc('Customer', invoice.customer)
+    if customer.tax_id:
+        tax_id = customer.tax_id
+
+    payload = {
+        "invoice_date": str(invoice.posting_date),
+        "invoice_number": invoice.name,
+        "invoice_pin":"P051736886D",
+        "customer_pin": tax_id,
+        "customer_exid":"",    
+        "grand_total": str(abs(invoice.grand_total)),
+        "net_subtotal": str(abs(invoice.net_total)),
+        "tax_total": str(abs(invoice.total_taxes_and_charges)),
+        "net_discount_total": str(abs(invoice.base_discount_amount)),
+        "sel_currency":"KSH",
+        "rel_doc_number":"",
+        "items_list": theitems
+    }
+
+    receip_url = 'http://192.168.1.20:8084/api/sign?invoice+1'
+
+    if invoice.select_print_heading == "Invoice":
+        receip_url = 'http://192.168.1.20:8084/api/sign?invoice+3'
+
+
+    if invoice.is_return == 1:
+        x_inv = frappe.get_doc("Sales Invoice", invoice.return_against)
+        payload['rel_doc_number'] = x_inv.cu_invoice_number
+        receip_url = 'http://192.168.1.20:8084/api/sign?invoice+2'
+    
+    try:
+        headers = {
+            "Authorization": "Bearer ZxZoaZMUQbUJDljA7kTExQ==",
+            "Content-Type": "application/json",
+        }
+        x_data = "nooop"
+        response = requests.post(receip_url, headers=headers, json=payload)
+        
+        if response.status_code == 401:
+            frappe.response.status_code = response.status_code
+
+        x_data = json.loads(response.text.replace("\\", ""), strict=False)
+        if "cu_serial_number" in x_data:
+            invoice.db_set({
+                'cu_serial_number': x_data['cu_serial_number'],
+                'cu_invoice_number': x_data['cu_invoice_number'],
+                'verify_url': x_data['verify_url']
+            })
+            
+            frappe.response.signature = {
+                'cu_serial_number': x_data['cu_serial_number'],
+                'cu_invoice_number': x_data['cu_invoice_number'],
+                'verify_url': x_data['verify_url']
+            }
+            
+        else:
+            frappe.log_error(frappe.get_traceback(), str(response.text))
+            
+    except requests.exceptions.Timeout as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+    except requests.exceptions.TooManyRedirects as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+    except requests.exceptions.RequestException as e:
+        frappe.log_error(frappe.get_traceback(), str(e))
+    except requests.exceptions.ConnectionError as e:
+        frappe.log_error('Connection error: Failed to establish a new connection', 'submitKra Connection Error')
+        
         
 def log_error(e):
     frappe.log_error(frappe.get_traceback(), str(e))
