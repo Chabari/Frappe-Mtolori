@@ -9,14 +9,14 @@ import json
 def create(**args):
     try:
         headers = frappe.local.request.headers
-        api_key = headers.get("api_key")
+        
+        api_key = headers.get("Api-Key")
 
         if not api_key:
             frappe.throw(("Missing API Key"), frappe.PermissionError)
         
         if api_key != "87454e2bac913cebefb9ac88826cf9":
             frappe.throw(("Failed. The API Key is invalid."), frappe.PermissionError)
-            
             
         sales_invoice_doc = frappe.db.get_value('Sales Invoice', {'order_id': str(args.get('order_id'))}, ['name'], as_dict=1) 
         if not sales_invoice_doc:
