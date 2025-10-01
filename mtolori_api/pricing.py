@@ -20,7 +20,7 @@ def save_price_group(items):
                 "name": item.price_list_name,
                 "buying": True if item.buying == 1 else False,
                 "selling": True if item.selling == 1 else False,
-                "shop": 1,
+                "shop_id": 1,
                 "erp_serial": item.price_list_id,
                 "active": True
             }   
@@ -42,7 +42,7 @@ def test_price(name):
             "name": doc.price_list_name,
             "buying": True if doc.buying == 1 else False,
             "selling": True if doc.selling == 1 else False,
-            "shop": 1,
+            "shop_id": 1,
             "erp_serial": doc.price_list_id,
             "active": True
         }
@@ -95,7 +95,7 @@ def save_price(items):
                 price_list = frappe.get_doc("Price List", doc.price_list)
                 if price_list.enabled == 1 and doc.item_code:
                     payload = {
-                        "shop": 1,
+                        "shop_id": 1,
                         "product__erp_serial": doc.item_code,
                         "price_list__erp_serial": price_list.price_list_id,
                         "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
@@ -172,7 +172,7 @@ def test_item_price(name):
         for doc in items:
             price_list = frappe.get_doc("Price List", doc.price_list)
             payload = {
-                "shop": 1,
+                "shop_id": 1,
                 "product__erp_serial": doc.item_code,
                 "price_list__erp_serial": price_list.price_list_id,
                 "selling_price": doc.price_list_rate if doc.selling == 1 else 0.0,
@@ -215,7 +215,7 @@ def test_save_customer(name):
                 payload = {
                     "phone_number": cus.mobile_contact_no,
                     "price_list__erp_serial": price_list.price_list_id,
-                    "shop": 1
+                    "shop_id": 1
                 }   
                 res = post2(f'/price-bias-lookup/', payload)
                 frappe.response.message = res
@@ -249,7 +249,7 @@ def save_customers(customers):
                 payload = {
                     "phone_number": cus.mobile_contact_no,
                     "price_list__erp_serial": price_list.price_list_id,
-                    "shop": 1
+                    "shop_id": 1
                 }   
                 res = post(f'/price-bias-lookup/', payload)
         frappe.db.commit()
@@ -270,7 +270,7 @@ def save_customer_group(groups):
                 "name": customer_group.customer_group_name,
                 "price_list__erp_serial": price_list_id if price_list_id else customer_group.default_price_list,
                 "active": True,
-                "shop": 1,
+                "shop_id": 1,
                 "erp_serial" : customer_group.name
             }  
             res = post(f'/customer-group/', payload)
@@ -287,7 +287,7 @@ def save_group(name):
             "name": customer_group.customer_group_name,
             "price_list__erp_serial": price_list_id if price_list_id else customer_group.default_price_list,
             "active": True,
-            "shop": 1,
+            "shop_id": 1,
             "erp_serial" : customer_group.name
         }  
         res = post2(f'/customer-group/', payload)
