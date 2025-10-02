@@ -48,19 +48,19 @@ def create(**args):
                 
                 for itm in args.get('items'):
                     item = frappe.get_doc("Item", itm.get('erp_serial'))
-                             
-                    sales_invoice_doc.append('items',{
-                        'item_code': item.item_code,
-                        'item_name': item.item_name,
-                        'description': item.description,
-                        'qty': itm.get('quantity'),
-                        'uom': item.stock_uom,
-                        'rate': itm.get('price'),
-                        'amount': itm.get('amount'),
-                        'cost_center': warehouse_name.name,
-                        'income_account': default_income_account
-                    })
-                    total_amount += float(itm.get('amount'))
+                    if item: 
+                        sales_invoice_doc.append('items',{
+                            'item_code': item.item_code,
+                            'item_name': item.item_name,
+                            'description': item.description,
+                            'qty': itm.get('quantity'),
+                            'uom': item.stock_uom,
+                            'rate': itm.get('price'),
+                            'amount': itm.get('amount'),
+                            'cost_center': warehouse_name.name,
+                            'income_account': default_income_account
+                        })
+                        total_amount += float(itm.get('amount'))
                     
                 if total_amount > 0:
                     sales_invoice_doc.is_pos = 1
