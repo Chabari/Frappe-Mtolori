@@ -94,12 +94,15 @@ def create(**args):
                             for tax in sales_invoice_doc.taxes:
                                 tax.included_in_print_rate = 1
                                 
+                    sales_invoice_doc.flags.ignore_permissions = True
+                    sales_invoice_doc.set_missing_values()
+                    frappe.flags.ignore_account_permission = True
                     sales_invoice_doc.save(ignore_permissions = True)
                                     
-                    # sign_invoice(sales_invoice_doc)
+                    sign_invoice(sales_invoice_doc)
                     
-                    # sales_invoice_doc.submit()
-                    # frappe.db.commit() 
+                    sales_invoice_doc.submit()
+                    frappe.db.commit() 
                     
 
                     frappe.response.sales_invoice_doc = sales_invoice_doc
