@@ -63,7 +63,7 @@ def create(**args):
                         total_amount += float(itm.get('amount'))
                     
                 if total_amount > 0:
-                    # sales_invoice_doc.is_pos = 1
+                    sales_invoice_doc.is_pos = 1
                     sales_invoice_doc.update_stock = 1
                     sales_invoice_doc.paid_amount = total_amount
                     
