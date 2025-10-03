@@ -104,7 +104,7 @@ def save_price(items):
                     }  
                     res = get(f"/pricing/{doc.name}/")
                     if not res:
-                        res = post2(f'/pricing/', payload)
+                        res = post(f'/pricing/', payload)
                     else:
                         res = patch(f"/pricing/{doc.name}/", payload)
             # try:

@@ -24,7 +24,7 @@ def create(**args):
             warehouse_name = frappe.db.get_value('Warehouse', {'shop_id': args.get('shop_id')}, ['name'], as_dict=1) 
             if warehouse_name:
             
-                profile_name = frappe.db.get_value('POS Profile', {'warehouse': warehouse_name.name}, ['name', 'income_account'], as_dict=1) 
+                # profile_name = frappe.db.get_value('POS Profile', {'warehouse': warehouse_name.name}, ['name', 'income_account'], as_dict=1) 
                 sales_invoice_doc = frappe.new_doc('Sales Invoice')
                 company = get_main_company()
                 customer = 'M-TOLORI WALK IN CUSTOMER'
@@ -37,11 +37,11 @@ def create(**args):
                 sales_invoice_doc.order_number = args.get('number')
                 sales_invoice_doc.delivery_method = args.get('delivery_method')
                 sales_invoice_doc.order_id = str(args.get('order_id'))
-                default_income_account = company.default_income_account
-                if profile_name:
-                    sales_invoice_doc.pos_profile = profile_name.name
-                    if profile_name.income_account:
-                        default_income_account = profile_name.income_account
+                default_income_account = "4118 - Mtolori Online Sales - MNA"
+                # if profile_name:
+                #     sales_invoice_doc.pos_profile = profile_name.name
+                #     if profile_name.income_account:
+                #         default_income_account = profile_name.income_account
                     
                 
                 total_amount = 0
@@ -63,7 +63,7 @@ def create(**args):
                         total_amount += float(itm.get('amount'))
                     
                 if total_amount > 0:
-                    sales_invoice_doc.is_pos = 1
+                    # sales_invoice_doc.is_pos = 1
                     sales_invoice_doc.update_stock = 1
                     sales_invoice_doc.paid_amount = total_amount
                     
@@ -82,12 +82,13 @@ def create(**args):
                     frappe.flags.ignore_account_permission = True
                     sales_invoice_doc.save(ignore_permissions = True)
                     
-                    sign_invoice(sales_invoice_doc)
+                    # sign_invoice(sales_invoice_doc)
                     
-                    sales_invoice_doc.submit()
-                    frappe.db.commit() 
+                    # sales_invoice_doc.submit()
+                    # frappe.db.commit() 
                     
 
+                    frappe.response.sales_invoice_doc = sales_invoice_doc
                     frappe.response.success = True
                     frappe.response.message = "Success. Order created"
             else:
