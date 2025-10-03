@@ -24,7 +24,7 @@ def create(**args):
             warehouse_name = frappe.db.get_value('Warehouse', {'shop_id': args.get('shop_id')}, ['name'], as_dict=1) 
             if warehouse_name:
             
-                # profile_name = frappe.db.get_value('POS Profile', {'warehouse': warehouse_name.name}, ['name', 'income_account'], as_dict=1) 
+                profile_name = frappe.db.get_value('POS Profile', {'warehouse': warehouse_name.name}, ['name', 'income_account'], as_dict=1) 
                 sales_invoice_doc = frappe.new_doc('Sales Invoice')
                 company = get_main_company()
                 customer = 'M-TOLORI WALK IN CUSTOMER'
@@ -38,10 +38,10 @@ def create(**args):
                 sales_invoice_doc.delivery_method = args.get('delivery_method')
                 sales_invoice_doc.order_id = str(args.get('order_id'))
                 default_income_account = "4118 - Mtolori Online Sales - MNA"
-                # if profile_name:
-                #     sales_invoice_doc.pos_profile = profile_name.name
-                #     if profile_name.income_account:
-                #         default_income_account = profile_name.income_account
+                if profile_name:
+                    sales_invoice_doc.pos_profile = profile_name.name
+                    if profile_name.income_account:
+                        default_income_account = profile_name.income_account
                     
                 
                 total_amount = 0
