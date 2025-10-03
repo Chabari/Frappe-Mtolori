@@ -104,8 +104,6 @@ def create(**args):
                     sales_invoice_doc.submit()
                     frappe.db.commit() 
                     
-
-                    frappe.response.sales_invoice_doc = sales_invoice_doc
                     frappe.response.success = True
                     frappe.response.message = "Success. Order created"
             else:
