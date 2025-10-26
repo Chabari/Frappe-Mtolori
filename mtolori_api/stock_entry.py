@@ -23,10 +23,15 @@ def create_stock_entry():
                 FROM `tabItem`
                 WHERE publish_item = 1 AND disabled=0
             """, as_dict=1)
+            top_selling = get_top_selling_products_this_month(20, row.linked_shop)
+            the_top_selling = [x.item_code for x in top_selling]
             for itm in xitems:
                 balance = get_stock_availability(itm.name, row.linked_shop)
                 if balance > 1:
-                    qty = get_percent(balance)
+                    per = 0.1
+                    if itm.name in the_top_selling:
+                        per = 0.2
+                    qty = get_percent(balance, per)
                     if qty > 0:
                         args = {
                             "item_code": itm.name,
@@ -67,9 +72,10 @@ def create_stock_entry():
 
 @frappe.whitelist(allow_guest=True)  
 def get_top_selling_products():
-    return get_top_selling_products_this_month(10)
+    top_selling = get_top_selling_products_this_month(10)
+    return [x.item_code for x in top_selling]
 
-def get_top_selling_products_this_month(limit=10, warehouse=None):
+def get_top_selling_products_this_month(limit, warehouse=None):
     # Get first and last day of the current month
     start_date = get_first_day(nowdate())
     end_date = get_last_day(nowdate())

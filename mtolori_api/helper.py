@@ -27,5 +27,5 @@ def get_stock_availability(item_code, warehouse):
     )
     return actual_qty
 
-def get_percent(qty):
-    return math.ceil(0.1 * qty)
+def get_percent(qty, per):
+    return math.ceil(per * qty)
