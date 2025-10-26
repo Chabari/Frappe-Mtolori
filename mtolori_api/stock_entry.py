@@ -2,7 +2,7 @@
 from mtolori_api.helper import *
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import now, nowdate, nowtime
+from frappe.utils import now, nowdate, nowtime, get_first_day, get_last_day
 from erpnext.stock.utils import get_incoming_rate
 
 @frappe.whitelist(allow_guest=True)  
@@ -63,3 +63,36 @@ def create_stock_entry():
                     )
                 )
                 stock_entry_doc.insert(ignore_permissions=True)
+                
+
+def get_top_selling_products_this_month(limit):
+    # Get first and last day of the current month
+    start_date = get_first_day(nowdate())
+    end_date = get_last_day(nowdate())
+
+    data = frappe.db.sql("""
+        SELECT
+            sii.item_code,
+            sii.item_name,
+            SUM(sii.qty) AS total_qty,
+            SUM(sii.amount) AS total_amount
+        FROM
+            `tabSales Invoice Item` sii
+        INNER JOIN
+            `tabSales Invoice` si ON sii.parent = si.name
+        WHERE
+            si.docstatus = 1
+            AND si.posting_date BETWEEN %s AND %s
+        GROUP BY
+            sii.item_code
+        ORDER BY
+            total_qty DESC
+        LIMIT %s
+    """, (start_date, end_date, limit), as_dict=True)
+
+    return data
+
+
+@frappe.whitelist(allow_guest=True)  
+def get_top_selling_products():
+    return get_top_selling_products_this_month(20)

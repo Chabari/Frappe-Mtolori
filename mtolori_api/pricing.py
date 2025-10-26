@@ -354,7 +354,6 @@ def batch_item_pricing():
                         
             start += chunk_size
 
-        
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), str(e))
     
