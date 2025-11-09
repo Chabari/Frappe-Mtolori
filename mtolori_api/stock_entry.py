@@ -180,6 +180,8 @@ def reconcile_stock():
                     "valuation_rate": valuation_rate
                 })
 
+        sr.flags.ignore_permissions = True
+        frappe.flags.ignore_account_permission = True
         if sr.items:
             sr.insert(ignore_permissions=True)
             
