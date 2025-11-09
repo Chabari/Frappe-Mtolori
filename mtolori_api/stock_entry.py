@@ -86,7 +86,7 @@ def move_stock_entry():
         """, as_dict=1)
         for itm in xitems:
             balance = get_stock_availability(itm.name, row)
-            if balance > 1:
+            if balance > 0:
                 
                 args = {
                     "item_code": itm.name,
