@@ -148,12 +148,16 @@ def reconcile_stock():
 
         if not items:
             continue  # ✅ don't return — just skip this warehouse
+        
+        sr = frappe.get_doc(
+            dict(
+                doctype="Stock Reconciliation",
+                posting_date=nowdate(),
+                posting_time=nowtime(),
+                company=frappe.defaults.get_user_default("Company"),
+            )
+        )
 
-        sr = frappe.new_doc("Stock Reconciliation")
-        sr.purpose = "Stock Reconciliation"
-        sr.company = frappe.defaults.get_user_default("Company")
-        sr.posting_date = nowdate()
-        sr.posting_time = nowtime()
 
         for item in items:
             if item.actual_qty != 0:
