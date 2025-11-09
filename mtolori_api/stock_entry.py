@@ -6,7 +6,7 @@ from erpnext.stock.utils import get_incoming_rate
 
 @frappe.whitelist(allow_guest=True)  
 def sync_stock():
-    frappe.enqueue('mtolori_api.stock_entry.create_stock_entry', queue='long', timeout=60*60*4)
+    frappe.enqueue('mtolori_api.stock_entry.move_stock_entry', queue='long', timeout=60*60*4)
     return "Success"
 
 def create_stock_entry():
@@ -68,6 +68,61 @@ def create_stock_entry():
                 )
                 stock_entry_doc.insert(ignore_permissions=True)
                 
+
+def move_stock_entry():
+    company = frappe.defaults.get_user_default(
+                        "Company"
+                    ) or frappe.defaults.get_global_default("company")
+    
+    t_warehouse = "Mwea Shop Warehouse - MNA"
+            
+    warehouses = ["KPLC MWEA CHEMICAL-MNA - MNA", "MWEA FEEDS KPLC WAREHOUSE - MNA", "Mwea Fertilizer and KPLC Warehouse - MNA", "Mwea Cereal KPLC Warehouse - MNA", "Mwea West Warehouse - MNA", "Mwea Vet Stores warehouse - MNA", "Mwea East Warehouse  - MNA", "Mwea Sales Returns Warehouses - MNA", "Mwea Maisha Kamili Warehouse - MNA", "Mwea Expired/Damaged/Returning Items Warehouse - MNA"]
+    for row in warehouses:
+        items = []
+        xitems = frappe.db.sql("""
+            SELECT name
+            FROM `tabItem`
+            WHERE disabled=0
+        """, as_dict=1)
+        for itm in xitems:
+            balance = get_stock_availability(itm.name, row)
+            if balance > 1:
+                
+                args = {
+                    "item_code": itm.name,
+                    "warehouse": row,
+                    "posting_date": nowdate(),
+                    "posting_time": nowtime(),
+                }
+                valuation_rate = get_incoming_rate(args)
+                item = frappe._dict({
+                        "item_code": itm.name,
+                        "qty": balance,
+                        "s_warehouse": row,
+                        "t_warehouse": t_warehouse,
+                        "basic_rate": valuation_rate,
+                        "valuation_rate": valuation_rate,
+                    }
+                )
+                items.append(item)
+        if items:
+            stock_entry_doc = frappe.get_doc(
+                dict(
+                    doctype="Stock Entry",
+                    from_bom=0,
+                    posting_date=nowdate(),
+                    posting_time=nowtime(),
+                    items=items,
+                    stock_entry_type="Material Transfer",
+                    purpose="Material Transfer",
+                    from_warehouse=row,
+                    to_warehouse=t_warehouse,
+                    company=company,
+                    remarks="Material Transfer. Consolidating the Mwea Warehouses",
+                )
+            )
+            stock_entry_doc.insert(ignore_permissions=True)
+            
 
 
 @frappe.whitelist(allow_guest=True)  
