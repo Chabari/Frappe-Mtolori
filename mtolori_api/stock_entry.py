@@ -6,7 +6,7 @@ from erpnext.stock.utils import get_incoming_rate
 
 @frappe.whitelist(allow_guest=True)  
 def sync_stock():
-    frappe.enqueue('mtolori_api.stock_entry.move_stock_entry', queue='long', timeout=60*60*4)
+    frappe.enqueue('mtolori_api.stock_entry.reconcile_stock', queue='long', timeout=60*60*4)
     return "Success"
 
 def create_stock_entry():
@@ -123,6 +123,67 @@ def move_stock_entry():
             )
             stock_entry_doc.insert(ignore_permissions=True)
             
+def reconcile_stock():
+    warehouses = [
+        "KPLC MWEA CHEMICAL-MNA - MNA",
+        "MWEA FEEDS KPLC WAREHOUSE - MNA",
+        "Mwea Fertilizer and KPLC Warehouse - MNA",
+        "Mwea Cereal KPLC Warehouse - MNA",
+        "Mwea West Warehouse - MNA",
+        "Mwea Vet Stores warehouse - MNA",
+        "Mwea East Warehouse  - MNA",
+        "Mwea Sales Returns Warehouses - MNA",
+        "Mwea Maisha Kamili Warehouse - MNA",
+        "Mwea Expired/Damaged/Returning Items Warehouse - MNA",
+    ]
+
+    for warehouse in warehouses:
+        items = frappe.db.sql("""
+            SELECT DISTINCT b.item_code, b.actual_qty
+            FROM `tabBin` b
+            LEFT JOIN `tabItem` i ON i.name = b.item_code
+            WHERE (b.actual_qty < 0 OR i.disabled = 1)
+              AND b.warehouse = %(warehouse)s
+        """, {"warehouse": warehouse}, as_dict=True)
+
+        if not items:
+            continue  # ✅ don't return — just skip this warehouse
+
+        sr = frappe.new_doc("Stock Reconciliation")
+        sr.purpose = "Stock Reconciliation"
+        sr.company = frappe.defaults.get_user_default("Company")
+        sr.posting_date = nowdate()
+        sr.posting_time = nowtime()
+
+        for item in items:
+            if item.actual_qty != 0:
+                args = {
+                    "item_code": item.item_code,
+                    "warehouse": warehouse,
+                    "posting_date": nowdate(),
+                    "posting_time": nowtime(),
+                }
+
+                try:
+                    valuation_rate = get_incoming_rate(args) or 0
+                except Exception:
+                    valuation_rate = 0
+
+                sr.append("items", {
+                    "item_code": item.item_code,
+                    "warehouse": warehouse,
+                    "qty": 0,
+                    "valuation_rate": valuation_rate
+                })
+
+        if sr.items:
+            sr.insert(ignore_permissions=True)
+            
+
+def get_item_valuation_rate(item_code):
+    """Get last valuation rate or fallback to 0"""
+    rate = frappe.db.get_value("Bin", {"item_code": item_code}, "valuation_rate")
+    return rate or 0
 
 
 @frappe.whitelist(allow_guest=True)  
