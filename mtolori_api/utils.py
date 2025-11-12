@@ -254,8 +254,14 @@ def sync_items():
 
 
 def update_stock_ledger(doc, method):
-    items = [doc.item_code]
-    frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
+    virtuals = check_is_virtual()
+    if doc.warehouse in virtuals:
+        items = [doc.item_code]
+        frappe.enqueue('mtolori_api.utils.save_itm', queue='long', items=items)
+        
+def check_is_virtual():
+    items = virtual_warehouses()
+    return [i.name for i in items]
 
 def get_stock_balance(doc):
     items = virtual_warehouses()
