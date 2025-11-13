@@ -143,6 +143,7 @@ def reconcile_stock():
         sr = frappe.get_doc(
             dict(
                 doctype="Stock Reconciliation",
+                purpose="Stock Reconciliation",
                 posting_date=nowdate(),
                 posting_time=nowtime(),
                 company=frappe.defaults.get_user_default("Company"),
