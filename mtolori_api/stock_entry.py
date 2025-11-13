@@ -125,16 +125,7 @@ def move_stock_entry():
             
 def reconcile_stock():
     warehouses = [
-        "KPLC MWEA CHEMICAL-MNA - MNA",
-        "MWEA FEEDS KPLC WAREHOUSE - MNA",
-        "Mwea Fertilizer and KPLC Warehouse - MNA",
-        "Mwea Cereal KPLC Warehouse - MNA",
-        "Mwea West Warehouse - MNA",
-        "Mwea Vet Stores warehouse - MNA",
-        "Mwea East Warehouse  - MNA",
-        "Mwea Sales Returns Warehouses - MNA",
-        "Mwea Maisha Kamili Warehouse - MNA",
-        "Mwea Expired/Damaged/Returning Items Warehouse - MNA",
+        "Mwea Mtolori Warehouse - MNA"
     ]
 
     for warehouse in warehouses:
