@@ -124,6 +124,7 @@ def move_stock_entry():
             stock_entry_doc.insert(ignore_permissions=True)
             
 def reconcile_stock():
+    frappe.set_user("Administrator")
     warehouses = [
         "Mwea Mtolori Warehouse - MNA"
     ]
