@@ -133,8 +133,7 @@ def reconcile_stock():
             SELECT DISTINCT b.item_code, b.actual_qty
             FROM `tabBin` b
             LEFT JOIN `tabItem` i ON i.name = b.item_code
-            WHERE (b.actual_qty < 0 OR i.disabled = 1)
-              AND b.warehouse = %(warehouse)s
+            WHERE b.warehouse = %(warehouse)s
         """, {"warehouse": warehouse}, as_dict=True)
 
         if not items:
