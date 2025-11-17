@@ -6,7 +6,7 @@ from erpnext.stock.utils import get_incoming_rate
 
 @frappe.whitelist(allow_guest=True)  
 def sync_stock():
-    frappe.enqueue('mtolori_api.stock_entry.reconcile_stock', queue='long', timeout=60*60*4)
+    frappe.enqueue('mtolori_api.stock_entry.create_stock_entry', queue='long', timeout=60*60*4)
     return "Success"
 
 def create_stock_entry():
@@ -14,7 +14,8 @@ def create_stock_entry():
                         "Company"
                     ) or frappe.defaults.get_global_default("company")
             
-    warehouses = virtual_warehouses()
+    # warehouses = virtual_warehouses()
+    warehouses = ['Mwea Shop Warehouse - MNA']
     for row in warehouses:
         if row.linked_shop:
             items = []
