@@ -100,11 +100,11 @@ def create(**args):
                     sales_invoice_doc.save(ignore_permissions = True)
                     frappe.db.commit() 
                                     
-                    sign_invoice(sales_invoice_doc)
                     
                     sales_invoice_doc.flags.ignore_permissions = True
                     frappe.flags.ignore_account_permission = True
                     sales_invoice_doc.submit()
+                    sign_invoice(sales_invoice_doc)
                     frappe.db.commit() 
                     
                     frappe.response.success = True
