@@ -17,21 +17,21 @@ def create_stock_entry():
     warehouses = virtual_warehouses()
     # warehouses = ['Mwea Shop Warehouse - MNA']
     for row in warehouses:
-        if row.linked_shop and row.linked_shop == "Mwea Shop Warehouse - MNA":
+        if row.linked_shop and row.linked_shop == "Makutano Warehouse - MNA":
             items = []
             xitems = frappe.db.sql("""
                 SELECT name
                 FROM `tabItem`
                 WHERE publish_item = 1 AND disabled=0
             """, as_dict=1)
-            top_selling = get_top_selling_products_this_month(20, row.linked_shop)
-            the_top_selling = [x.item_code for x in top_selling]
+            # top_selling = get_top_selling_products_this_month(20, row.linked_shop)
+            # the_top_selling = [x.item_code for x in top_selling]
             for itm in xitems:
                 balance = get_stock_availability(itm.name, row.linked_shop)
                 if balance > 1:
                     per = 0.1
-                    if itm.name in the_top_selling:
-                        per = 0.2
+                    # if itm.name in the_top_selling:
+                    #     per = 0.2
                     qty = get_percent(balance, per)
                     if qty > 0:
                         args = {
