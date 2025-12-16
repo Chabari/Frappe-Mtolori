@@ -15,9 +15,9 @@ def create_stock_entry():
                     ) or frappe.defaults.get_global_default("company")
             
     warehouses = virtual_warehouses()
-    # warehouses = ['Mwea Shop Warehouse - MNA']
+    xwarehouses = ['Ruiru Branch Warehouse - MNA', 'Makutano Warehouse - MNA']
     for row in warehouses:
-        if row.linked_shop and row.linked_shop == "Makutano Warehouse - MNA":
+        if row.linked_shop and row.linked_shop in xwarehouses:
             items = []
             xitems = frappe.db.sql("""
                 SELECT name
