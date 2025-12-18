@@ -6,7 +6,7 @@ from erpnext.stock.utils import get_incoming_rate
 
 @frappe.whitelist(allow_guest=True)  
 def sync_stock():
-    frappe.enqueue('mtolori_api.stock_entry.create_stock_entry', queue='long', timeout=60*60*4)
+    frappe.enqueue('mtolori_api.stock_entry.move_stock_entry', queue='long', timeout=60*60*4)
     return "Success"
 
 def create_stock_entry():
@@ -15,7 +15,7 @@ def create_stock_entry():
                     ) or frappe.defaults.get_global_default("company")
             
     warehouses = virtual_warehouses()
-    xwarehouses = ['Ruiru Branch Warehouse - MNA', 'Makutano Warehouse - MNA']
+    xwarehouses = ['Makutano Warehouse - MNA']
     for row in warehouses:
         if row.linked_shop and row.linked_shop in xwarehouses:
             items = []
@@ -75,9 +75,9 @@ def move_stock_entry():
                         "Company"
                     ) or frappe.defaults.get_global_default("company")
     
-    t_warehouse = "Mwea Shop Warehouse - MNA"
+    t_warehouse = "Makutano Warehouse - MNA"
             
-    warehouses = ["KPLC MWEA CHEMICAL-MNA - MNA", "MWEA FEEDS KPLC WAREHOUSE - MNA", "Mwea Fertilizer and KPLC Warehouse - MNA", "Mwea Cereal KPLC Warehouse - MNA", "Mwea West Warehouse - MNA", "Mwea Vet Stores warehouse - MNA", "Mwea East Warehouse  - MNA", "Mwea Sales Returns Warehouses - MNA", "Mwea Maisha Kamili Warehouse - MNA", "Mwea Expired/Damaged/Returning Items Warehouse - MNA"]
+    warehouses = ["Makutano HQ Mtolori Warehouse - MNA"]
     for row in warehouses:
         items = []
         xitems = frappe.db.sql("""
