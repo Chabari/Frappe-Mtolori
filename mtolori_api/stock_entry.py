@@ -226,3 +226,50 @@ def get_top_selling_products_this_month(limit, warehouse=None):
 
     data = frappe.db.sql(query, params, as_dict=True)
     return data
+
+
+
+@frappe.whitelist(allow_guest=True)  
+def set_default_warehouse():
+    frappe.enqueue('mtolori_api.stock_entry.item_default_warehouse', queue='long', timeout=60*60*4)
+    return "Success"
+
+def item_default_warehouse():
+
+    COMPANY = frappe.defaults.get_user_default(
+                        "Company"
+                    ) or frappe.defaults.get_global_default("company")
+    DEFAULT_WAREHOUSE = "Makutano Warehouse - MNA"
+
+    items = frappe.get_all("Item", pluck="name", filters={"disabled": 0})
+
+    for item in items:
+        item_default = frappe.db.exists(
+            "Item Default",
+            {
+                "parent": item,
+                "parenttype": "Item",
+                "company": COMPANY
+            }
+        )
+
+        if item_default:
+            frappe.db.set_value(
+                "Item Default",
+                item_default,
+                "default_warehouse",
+                DEFAULT_WAREHOUSE
+            )
+        else:
+            # create Item Default row
+            doc = frappe.get_doc({
+                "doctype": "Item Default",
+                "parent": item,
+                "parenttype": "Item",
+                "parentfield": "item_defaults",
+                "company": COMPANY,
+                "default_warehouse": DEFAULT_WAREHOUSE
+            })
+            doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
